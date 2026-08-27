@@ -50,7 +50,15 @@ export default function ExecutiveDashboard() {
     <div className="space-y-8">
       {/* Top Welcome & Brand Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 shrink-0 rounded-2xl overflow-hidden bg-slate-700 border border-cyan-400/30 shadow-lg shadow-cyan-500/20">
+            <img
+              src="/draperu-logo.svg"
+              alt="DraperU India logo"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30">
               DraperU India Ecosystem
@@ -60,6 +68,7 @@ export default function ExecutiveDashboard() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
             Founder Intelligence Dashboard
           </h1>
+          </div>
         </div>
 
         {/* Action Buttons */}
