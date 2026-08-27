@@ -76,8 +76,8 @@ export function Navbar({ onToggleMobileSidebar }: NavbarProps) {
           </button>
 
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 via-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-600/30 group-hover:scale-105 transition-transform">
-              <span className="font-black text-white text-lg tracking-tighter">DU</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-700 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+              <img src="/draperu-logo.svg" alt="DraperU logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="flex items-center gap-2">

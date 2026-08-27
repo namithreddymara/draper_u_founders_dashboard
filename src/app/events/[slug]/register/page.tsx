@@ -289,8 +289,8 @@ function EventRegistrationContent() {
         <div className="relative p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border-b border-slate-800">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center font-black text-white text-base shadow-lg shadow-rose-600/30">
-                DU
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-700 shadow-lg shadow-cyan-500/20">
+                <img src="/draperu-logo.svg" alt="DraperU logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="font-black text-white text-sm tracking-tight">DRAPER<span className="text-rose-500">U</span> INDIA</span>

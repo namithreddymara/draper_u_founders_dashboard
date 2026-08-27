@@ -70,8 +70,8 @@ export default function QRRegistrationHubPage() {
               className="p-8 rounded-3xl bg-slate-900 border-2 border-slate-800 hover:border-rose-500/50 shadow-2xl text-center space-y-4 print-badge transition group"
             >
               <div className="flex items-center justify-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-600 flex items-center justify-center font-black text-white text-sm">
-                  DU
+                <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-700">
+                  <img src="/draperu-logo.svg" alt="DraperU logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-black text-white text-sm">DRAPER<span className="text-rose-500">U</span> INDIA</span>
               </div>
@@ -324,8 +324,8 @@ export default function QRRegistrationHubPage() {
           <div className="space-y-4 text-center">
             <div className="p-8 rounded-3xl bg-slate-950 border-2 border-rose-500 shadow-2xl space-y-4 print-badge">
               <div className="flex items-center justify-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-600 flex items-center justify-center font-black text-white text-sm">
-                  DU
+                <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-700">
+                  <img src="/draperu-logo.svg" alt="DraperU logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-bold text-white text-sm">DRAPERU INDIA</span>
               </div>
