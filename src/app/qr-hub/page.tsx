@@ -1,52 +1,34 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  QrCode,
   Printer,
-  Download,
-  Users,
-  CalendarDays,
   Sparkles,
-  Layers,
   ExternalLink,
-  ShieldCheck,
-  PlusCircle,
-  Zap,
-  CheckCircle2,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
-import { Founder, DraperUEvent } from '@/types';
+import { DraperUEvent, Founder } from '@/types';
 import { QRCodeCard } from '@/components/ui/QRCodeCard';
 import { Modal } from '@/components/ui/Modal';
 
 export default function QRRegistrationHubPage() {
-  const [founders, setFounders] = useState<Founder[]>([]);
-  const [events, setEvents] = useState<DraperUEvent[]>([]);
-  const [activeTab, setActiveTab] = useState<'event_posters' | 'founder_fast_reg' | 'custom_builder'>('event_posters');
-  const [selectedPosterEvent, setSelectedPosterEvent] = useState<DraperUEvent | null>(null);
-
-  // Custom QR Builder state
-  const [customEventId, setCustomEventId] = useState('');
-  const [customTag, setCustomTag] = useState('Entrance Gate Banner');
-  const [customFounderId, setCustomFounderId] = useState('');
-
-  useEffect(() => {
+  const [founders] = useState<Founder[]>([]);
+  const [events] = useState<DraperUEvent[]>(() => {
     dataService.init();
-    const fList = dataService.getFounders();
-    const eList = dataService.getEvents();
-    setFounders(fList);
-    setEvents(eList);
-    if (eList.length > 0) setCustomEventId(eList[0].id);
-  }, []);
+    return dataService.getEvents();
+  });
+  const [activeTab] = useState<'event_posters' | 'founder_fast_reg' | 'custom_builder'>('event_posters');
+  const [selectedPosterEvent, setSelectedPosterEvent] = useState<DraperUEvent | null>(null);
+  const [customEventId] = useState('');
+  const [customTag] = useState('');
+  const [customFounderId] = useState('');
 
   const handlePrintAll = () => {
     window.print();
   };
 
   const selectedCustomEvent = events.find((e) => e.id === customEventId) || events[0];
-
   const generatedCustomUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/events/${selectedCustomEvent?.slug || 'founder-mafia-night-blr'}/register?source=${encodeURIComponent(customTag)}${customFounderId ? `&founder=${customFounderId}` : ''}`
     : '';
@@ -66,7 +48,7 @@ export default function QRRegistrationHubPage() {
             Founder Registration QR Hub
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Generate and print official "Scan to Register" entrance posters, table stands, and founder fast-registration QRs.
+            Generate and print official founder registration QR codes for each DraperU event.
           </p>
         </div>
 
@@ -81,48 +63,7 @@ export default function QRRegistrationHubPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 no-print">
-        <button
-          onClick={() => setActiveTab('event_posters')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-            activeTab === 'event_posters'
-              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <CalendarDays className="w-3.5 h-3.5" />
-          <span>1. Event Entrance "Scan to Register" Posters ({events.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('founder_fast_reg')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-            activeTab === 'founder_fast_reg'
-              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5" />
-          <span>2. Founder Fast-Registration QR Passes ({founders.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('custom_builder')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-            activeTab === 'custom_builder'
-              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>3. Custom Registration QR Generator</span>
-        </button>
-      </div>
-
-      {/* --- TAB 1: EVENT ENTRANCE REGISTRATION POSTERS --- */}
-      {activeTab === 'event_posters' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {events.map((evt) => (
             <div
               key={evt.id}
@@ -186,7 +127,6 @@ export default function QRRegistrationHubPage() {
             </div>
           ))}
         </div>
-      )}
 
       {/* --- TAB 2: FOUNDER FAST-REGISTRATION QR PASSES --- */}
       {activeTab === 'founder_fast_reg' && (
