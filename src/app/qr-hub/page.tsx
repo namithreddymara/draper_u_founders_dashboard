@@ -20,9 +20,9 @@ export default function QRRegistrationHubPage() {
   });
   const [activeTab] = useState<'event_posters' | 'founder_fast_reg' | 'custom_builder'>('event_posters');
   const [selectedPosterEvent, setSelectedPosterEvent] = useState<DraperUEvent | null>(null);
-  const [customEventId] = useState('');
-  const [customTag] = useState('');
-  const [customFounderId] = useState('');
+  const [customEventId, setCustomEventId] = useState('');
+  const [customTag, setCustomTag] = useState('');
+  const [customFounderId, setCustomFounderId] = useState('');
 
   const handlePrintAll = () => {
     window.print();

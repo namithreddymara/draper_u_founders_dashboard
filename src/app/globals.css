@@ -1,89 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
-  --primary: #e11d48;
-  --primary-hover: #be123c;
-  --draper-red: #e11d48;
-  --draper-dark: #070a11;
-  --draper-card: #0f172a;
-  --draper-border: #1e293b;
+  --background: #f8fafc;
+  --foreground: #111827;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --draper-blue: #2563eb;
+  --draper-dark: #0a1628;
+  --draper-card: #ffffff;
+  --draper-border: #e5e7eb;
   --draper-gold: #f59e0b;
+  --sidebar-width: 240px;
+  --right-panel-width: 280px;
 }
 
 body {
-  background: #090d16;
-  color: #f1f5f9;
+  background: #f0f4f8;
+  color: #111827;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Custom glowing badge effects */
-.glow-red {
-  box-shadow: 0 0 25px rgba(225, 29, 72, 0.25);
-}
-
-.glow-blue {
-  box-shadow: 0 0 25px rgba(59, 130, 246, 0.25);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
-}
-
-.glow-gold {
-  box-shadow: 0 0 25px rgba(245, 158, 11, 0.25);
-}
-
-/* Glassmorphic card styling */
-.glass-card {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-card-hover {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card-hover:hover {
-  border-color: rgba(225, 29, 72, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 29, 72, 0.15);
-}
-
 /* Smooth custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f1f5f9;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
 
-/* Print styles for Lanyard / Founder Badge & Event Passes */
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+/* Print styles */
 @media print {
   body {
     background: white !important;
     color: black !important;
   }
-
-  .no-print {
-    display: none !important;
-  }
-
+  .no-print { display: none !important; }
   .print-badge-container {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -92,7 +62,6 @@ body {
     padding: 0 !important;
     margin: 0 !important;
   }
-
   .print-badge {
     page-break-inside: avoid;
     break-inside: avoid;

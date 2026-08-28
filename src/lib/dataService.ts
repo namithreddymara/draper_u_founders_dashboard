@@ -263,6 +263,11 @@ class DataService {
       createdBy: 'System Automation',
     });
 
+    // Sync to Supabase in background if configured
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertFounder(newFounder).catch(() => {});
+    });
+
     return newFounder;
   }
 
@@ -277,6 +282,12 @@ class DataService {
       updatedAt: new Date().toISOString(),
     };
     setItem(STORAGE_KEYS.FOUNDERS, founders);
+
+    // Sync to Supabase in background if configured
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertFounder(founders[index]).catch(() => {});
+    });
+
     return founders[index];
   }
 

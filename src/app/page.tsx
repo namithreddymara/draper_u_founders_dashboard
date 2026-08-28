@@ -6,461 +6,566 @@ import {
   Users,
   Rocket,
   CalendarDays,
+  ClipboardList,
   CalendarCheck,
   Flame,
-  UserPlus,
-  ArrowUpRight,
   TrendingUp,
-  PieChart,
-  MapPin,
-  Clock,
+  TrendingDown,
+  Calendar,
+  ChevronDown,
   CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  PlusCircle,
-  FileSpreadsheet,
-  QrCode,
-  Sparkles,
-  PhoneCall,
-  Search,
+  Clock,
+  Circle,
+  ArrowUpRight,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 import { ExecutiveMetrics, DraperUEvent, FollowUp, Founder } from '@/types';
-import { Badge } from '@/components/ui/Badge';
+
+// ──────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconBg,
+  change,
+  changeUp,
+  suffix = '',
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  iconBg: string;
+  change: string;
+  changeUp: boolean;
+  suffix?: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-500">{label}</span>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: iconBg }}>
+          <Icon className="w-4 h-4 text-white" />
+        </div>
+      </div>
+      <div className="text-2xl font-black text-gray-900">
+        {typeof value === 'number' ? value.toLocaleString() : value}{suffix}
+      </div>
+      <div className={`flex items-center gap-1 text-[11px] font-semibold ${changeUp ? 'text-emerald-600' : 'text-red-500'}`}>
+        {changeUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+        <span>{change}</span>
+        <span className="text-gray-400 font-normal">vs last month</span>
+      </div>
+    </div>
+  );
+}
+
+// Simple SVG line chart
+function FounderGrowthChart() {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+  const values = [1200, 1800, 2400, 3100, 3700, 4200, 4700, 5124];
+  const max = 6000;
+  const W = 340;
+  const H = 120;
+  const pad = { l: 28, r: 12, t: 10, b: 28 };
+
+  const pts = values.map((v, i) => ({
+    x: pad.l + (i / (values.length - 1)) * (W - pad.l - pad.r),
+    y: pad.t + (1 - v / max) * (H - pad.t - pad.b),
+  }));
+
+  const polyline = pts.map((p) => `${p.x},${p.y}`).join(' ');
+  const area = `${pts[0].x},${H - pad.b} ${polyline} ${pts[pts.length - 1].x},${H - pad.b}`;
+
+  return (
+    <div className="relative w-full" style={{ height: H + 20 }}>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {/* Area fill */}
+        <polygon points={area} fill="url(#lineGrad)" />
+        {/* Line */}
+        <polyline points={polyline} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {/* Last point dot */}
+        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill="#2563eb" stroke="white" strokeWidth="2" />
+        {/* Last value label */}
+        <text x={pts[pts.length - 1].x} y={pts[pts.length - 1].y - 8} textAnchor="middle" fill="#2563eb" fontSize="9" fontWeight="700">
+          5,124
+        </text>
+        {/* Y-axis gridlines */}
+        {[0, 2000, 4000, 6000].map((v) => {
+          const y = pad.t + (1 - v / max) * (H - pad.t - pad.b);
+          return (
+            <g key={v}>
+              <line x1={pad.l} y1={y} x2={W - pad.r} y2={y} stroke="#f0f4f8" strokeWidth="1" />
+              <text x={pad.l - 4} y={y + 3} textAnchor="end" fill="#9ca3af" fontSize="7">
+                {v === 0 ? '0' : `${v / 1000}K`}
+              </text>
+            </g>
+          );
+        })}
+        {/* X-axis labels */}
+        {months.map((m, i) => {
+          const x = pad.l + (i / (months.length - 1)) * (W - pad.l - pad.r);
+          return (
+            <text key={m} x={x} y={H - pad.b + 12} textAnchor="middle" fill="#9ca3af" fontSize="7">
+              {m}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// Donut chart (SVG)
+function DonutChart({
+  slices,
+  total,
+  label,
+}: {
+  slices: { color: string; pct: number }[];
+  total: number;
+  label: string;
+}) {
+  const R = 52;
+  const cx = 70;
+  const cy = 70;
+  const circumference = 2 * Math.PI * R;
+
+  let offset = -0.25 * circumference; // start from top
+  const arcs = slices.map((s) => {
+    const len = (s.pct / 100) * circumference;
+    const arc = { color: s.color, offset, len };
+    offset += len;
+    return arc;
+  });
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
+      <svg viewBox="0 0 140 140" className="absolute inset-0 w-full h-full">
+        {arcs.map((arc, i) => (
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r={R}
+            fill="none"
+            stroke={arc.color}
+            strokeWidth="22"
+            strokeDasharray={`${arc.len} ${circumference - arc.len}`}
+            strokeDashoffset={-arc.offset}
+            style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
+          />
+        ))}
+        {/* inner white hole */}
+        <circle cx={cx} cy={cy} r="38" fill="white" />
+      </svg>
+      <div className="relative z-10 text-center">
+        <div className="text-xl font-black text-gray-900">{total.toLocaleString()}</div>
+        <div className="text-[9px] text-gray-500 font-medium">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+const PRIORITY_COLORS: Record<string, string> = {
+  High: '#ef4444',
+  Medium: '#f59e0b',
+  Low: '#6b7280',
+};
+
+const PRIORITY_BG: Record<string, string> = {
+  High: '#fee2e2',
+  Medium: '#fef3c7',
+  Low: '#f3f4f6',
+};
+
+// ──────────────────────────────────────────────────
+// Main Dashboard
+// ──────────────────────────────────────────────────
 
 export default function ExecutiveDashboard() {
   const [metrics, setMetrics] = useState<ExecutiveMetrics | null>(null);
-  const [events, setEvents] = useState<DraperUEvent[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [recentFounders, setRecentFounders] = useState<Founder[]>([]);
 
   useEffect(() => {
     dataService.init();
     setMetrics(dataService.getExecutiveMetrics());
-    setEvents(dataService.getEvents());
-    setFollowUps(dataService.getFollowUps().slice(0, 5));
+    setFollowUps(dataService.getFollowUps().slice(0, 4));
     setRecentFounders(dataService.getFounders().slice(0, 5));
   }, []);
 
   if (!metrics) return null;
 
-  const liveEvent = events.find((e) => e.status === 'live') || events[0];
+  const today = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const statCards = [
+    {
+      label: 'Total Founders',
+      value: 5124,
+      icon: Users,
+      iconBg: '#2563eb',
+      change: '↑ 12.4%',
+      changeUp: true,
+    },
+    {
+      label: 'Startups',
+      value: 3208,
+      icon: Rocket,
+      iconBg: '#7c3aed',
+      change: '↑ 8.7%',
+      changeUp: true,
+    },
+    {
+      label: 'Events',
+      value: 512,
+      icon: CalendarDays,
+      iconBg: '#0ea5e9',
+      change: '↑ 16.2%',
+      changeUp: true,
+    },
+    {
+      label: 'Registrations',
+      value: 1248,
+      icon: ClipboardList,
+      iconBg: '#10b981',
+      change: '↑ 10.3%',
+      changeUp: true,
+    },
+    {
+      label: 'Follow-ups',
+      value: 43,
+      icon: CalendarCheck,
+      iconBg: '#6366f1',
+      change: '↓ 5.1%',
+      changeUp: false,
+    },
+    {
+      label: 'Hot Leads',
+      value: 87,
+      icon: Flame,
+      iconBg: '#ef4444',
+      change: '↑ 13.6%',
+      changeUp: true,
+    },
+  ];
+
+  const sectorSlices = [
+    { color: '#2563eb', pct: 28, name: 'AI / ML' },
+    { color: '#7c3aed', pct: 24, name: 'SaaS' },
+    { color: '#f59e0b', pct: 16, name: 'FinTech' },
+    { color: '#10b981', pct: 12, name: 'HealthTech' },
+    { color: '#ef4444', pct: 8, name: 'DeepTech' },
+    { color: '#9ca3af', pct: 12, name: 'Others' },
+  ];
+
+  const upcomingFollowUps = [
+    { name: 'Rahul Sharma', topic: 'Investor Introduction', date: 'Tomorrow', priority: 'High', avatar: 'RS' },
+    { name: 'Priya Reddy', topic: 'Funding Discussion', date: '25 Aug, 2026', priority: 'Medium', avatar: 'PR' },
+    { name: 'Arjun Kumar', topic: 'Event Invitation', date: '27 Aug, 2026', priority: 'Medium', avatar: 'AK' },
+    { name: 'Neha Verma', topic: 'Mentorship Follow-up', date: '28 Aug, 2026', priority: 'Low', avatar: 'NV' },
+  ];
+
+  const recentRegistrations = [
+    { name: 'Karthik Iyer', company: 'Nova AI', sector: 'AI / ML', time: '2m ago' },
+    { name: 'Sneha Patel', company: 'HealEase', sector: 'HealthTech', time: '5m ago' },
+    { name: 'Vikram Singh', company: 'FinFlow', sector: 'FinTech', time: '12m ago' },
+    { name: 'Meera Joshi', company: 'EduNova', sector: 'EdTech', time: '18m ago' },
+    { name: 'Rohit Mehta', company: 'GreenGrid', sector: 'CleanTech', time: '22m ago' },
+  ];
+
+  const topCities = [
+    { city: 'Bengaluru', count: 1248, max: 1248 },
+    { city: 'Hyderabad', count: 892, max: 1248 },
+    { city: 'Mumbai', count: 768, max: 1248 },
+    { city: 'Delhi', count: 512, max: 1248 },
+    { city: 'Pune', count: 420, max: 1248 },
+  ];
+
+  const eventRegSlices = [
+    { color: '#2563eb', pct: 57, label: 'Checked In', count: '86 (57%)' },
+    { color: '#10b981', pct: 100, label: 'Registered', count: '127 (100%)' },
+    { color: '#f59e0b', pct: 33, label: 'Pending', count: '41 (33%)' },
+  ];
+
+  const websiteFlowSteps = [
+    { n: 1, title: 'Scan QR Code', desc: 'Founder scans the DraperU registration QR', icon: '📱' },
+    { n: 2, title: 'Enter Contact', desc: 'Enter email or phone to continue', icon: '📧' },
+    { n: 3, title: 'Check Existing', desc: 'We check our records for existing founder', icon: '🔍' },
+    { n: 4, title: 'New Founder', desc: 'New founder? Fill the registration form', icon: '👤' },
+    { n: 5, title: 'Create Profile', desc: 'Profile created with unique Founder ID', icon: '✅' },
+    { n: 6, title: 'Registration Success', desc: 'Successfully registered! Welcome to DraperU', icon: '🎉' },
+  ];
 
   return (
-    <div className="space-y-8">
-      {/* Top Welcome & Brand Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 shrink-0 rounded-2xl overflow-hidden bg-slate-700 border border-cyan-400/30 shadow-lg shadow-cyan-500/20">
-            <img
-              src="/draperu-logo.svg"
-              alt="DraperU India logo"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30">
-              DraperU India Ecosystem
-            </span>
-            <span className="text-xs text-slate-400">Founder Intelligence & CRM Control Center</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
-            Founder Intelligence Dashboard
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-black text-gray-900">
+            Welcome back, Anshi! 👋
           </h1>
-          </div>
+          <p className="text-sm text-gray-500 mt-0.5">Here&apos;s what&apos;s happening in DraperU India today.</p>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/search"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-semibold transition"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>AI Founder Search</span>
-          </Link>
-          <Link
-            href="/import"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-semibold transition"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Import Google Sheet</span>
-          </Link>
-          <Link
-            href="/checkin"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>Event Fast Scanner</span>
-          </Link>
+        <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-gray-200 text-sm text-gray-600 font-medium shadow-sm">
+          <Calendar className="w-4 h-4 text-gray-400" />
+          <span>21 Aug, 2026</span>
         </div>
       </div>
 
-      {/* Row 1: Executive KPI Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        {/* Founders */}
-        <Link
-          href="/founders"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-rose-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Founders</span>
-            <Users className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-white mt-2">
-            {metrics.totalFounders.toLocaleString()}+
-          </div>
-          <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-1 font-medium">
-            <ArrowUpRight className="w-3 h-3" />
-            <span>+124 this month</span>
-          </div>
-        </Link>
-
-        {/* Startups */}
-        <Link
-          href="/startups"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Startups</span>
-            <Rocket className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-white mt-2">
-            {metrics.totalStartups.toLocaleString()}+
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">
-            Across 9 sectors
-          </div>
-        </Link>
-
-        {/* Events */}
-        <Link
-          href="/events"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Events</span>
-            <CalendarDays className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-white mt-2">
-            {metrics.totalEvents}+
-          </div>
-          <div className="text-[10px] text-emerald-400 mt-1">
-            1 Live right now
-          </div>
-        </Link>
-
-        {/* Follow-ups */}
-        <Link
-          href="/follow-ups"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Follow-ups</span>
-            <CalendarCheck className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-amber-300 mt-2">
-            {metrics.followUpsCount.totalActive}
-          </div>
-          <div className="text-[10px] text-rose-400 mt-1 font-semibold">
-            {metrics.followUpsCount.overdue} Overdue
-          </div>
-        </Link>
-
-        {/* High Priority */}
-        <Link
-          href="/founders?filter=priority"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-rose-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">High Priority</span>
-            <Flame className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-rose-400 mt-2">
-            {metrics.highPriorityFounders}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">
-            Fundraising / VIP
-          </div>
-        </Link>
-
-        {/* New This Month */}
-        <Link
-          href="/founders?filter=new"
-          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">New This Month</span>
-            <UserPlus className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-300 mt-2">
-            {metrics.newFoundersThisMonth}
-          </div>
-          <div className="text-[10px] text-emerald-400 mt-1">
-            QR Auto-registered
-          </div>
-        </Link>
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {statCards.map((card) => (
+          <StatCard key={card.label} {...card} />
+        ))}
       </div>
 
-      {/* Row 2: Charts & Sector Intelligence Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Growth Velocity Simulation */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-rose-500" />
-              Founder Growth Velocity
-            </h3>
-            <span className="text-[11px] text-emerald-400 font-semibold">+38% YoY</span>
+      {/* ── Row 2: Chart | Sectors | Follow-ups ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Founder Growth */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-bold text-gray-900">Founder Growth</h3>
+            <button className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1">
+              This Year <ChevronDown className="w-3 h-3" />
+            </button>
           </div>
+          <FounderGrowthChart />
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-1">
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>12.4% Growth this year</span>
+          </div>
+        </div>
 
-          <p className="text-xs text-slate-400">
-            Monthly cumulative registered founders via automated event QR check-ins.
-          </p>
-
-          {/* Stylized CSS Bar Trend */}
-          <div className="pt-4 flex items-end justify-between gap-2 h-36 border-b border-slate-800 pb-2">
-            {[
-              { month: 'Mar', count: '1.8K', h: '35%' },
-              { month: 'Apr', count: '2.4K', h: '45%' },
-              { month: 'May', count: '3.1K', h: '60%' },
-              { month: 'Jun', count: '3.9K', h: '72%' },
-              { month: 'Jul', count: '4.6K', h: '85%' },
-              { month: 'Aug', count: '5.4K', h: '100%' },
-            ].map((bar, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                <span className="text-[9px] font-mono text-slate-400 group-hover:text-rose-400">{bar.count}</span>
-                <div className="w-full bg-slate-950 rounded-t-lg h-24 flex items-end overflow-hidden">
-                  <div
-                    style={{ height: bar.h }}
-                    className="w-full bg-gradient-to-t from-rose-600 to-amber-500 rounded-t-md group-hover:brightness-125 transition-all"
-                  />
+        {/* Startup Sectors */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Startup Sectors</h3>
+            <button className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1">
+              This Year <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="flex items-center gap-4">
+            <DonutChart
+              slices={sectorSlices.map((s) => ({ color: s.color, pct: s.pct }))}
+              total={3208}
+              label="Startups"
+            />
+            <div className="flex-1 space-y-1.5">
+              {sectorSlices.map((s) => (
+                <div key={s.name} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
+                  <span className="text-[11px] text-gray-600 flex-1">{s.name}</span>
+                  <span className="text-[11px] font-bold text-gray-900">{s.pct}%</span>
                 </div>
-                <span className="text-[10px] font-medium text-slate-400">{bar.month}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-            <span>Primary Channels: Event QR (72%)</span>
-            <span className="text-rose-400 font-semibold">5,420 Active Founders</span>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Startup Sectors Distribution */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-indigo-400" />
-              Startup Sectors Breakdown
-            </h3>
-            <Link href="/startups" className="text-xs text-rose-400 hover:underline">
+        {/* Upcoming Follow-ups */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Upcoming Follow-ups</h3>
+            <Link href="/follow-ups" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
               View all
             </Link>
           </div>
-
-          <div className="space-y-2.5 pt-1">
-            {[
-              { name: 'AI / ML', pct: 34, color: 'bg-rose-500', count: '1,840' },
-              { name: 'SaaS & Enterprise', pct: 26, color: 'bg-indigo-500', count: '1,410' },
-              { name: 'FinTech & Cross-border', pct: 16, color: 'bg-amber-500', count: '860' },
-              { name: 'HealthTech & Bio', pct: 12, color: 'bg-emerald-500', count: '650' },
-              { name: 'DeepTech & Hardware', pct: 8, color: 'bg-cyan-500', count: '430' },
-              { name: 'ClimateTech & Others', pct: 4, color: 'bg-purple-500', count: '230' },
-            ].map((sec, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-slate-200">{sec.name}</span>
-                  <span className="text-slate-400 font-mono text-[11px]">{sec.count} ({sec.pct}%)</span>
+          <div className="space-y-3">
+            {upcomingFollowUps.map((f) => (
+              <div key={f.name} className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                  style={{ background: '#2563eb' }}
+                >
+                  {f.avatar}
                 </div>
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
-                  <div
-                    style={{ width: `${sec.pct}%` }}
-                    className={`h-full rounded-full ${sec.color}`}
-                  />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-gray-900 truncate">{f.name}</div>
+                  <div className="text-[10px] text-gray-500 truncate">{f.topic}</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Active Live Event Spotlight */}
-        {liveEvent && (
-          <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-xl flex flex-col justify-between space-y-4">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                  Live Event Spotlight
-                </span>
-                <span className="text-xs text-slate-400">{liveEvent.city}</span>
-              </div>
-
-              <h4 className="text-base font-black text-white mt-2.5">
-                {liveEvent.title}
-              </h4>
-              <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                {liveEvent.tagline}
-              </p>
-
-              {/* Progress Meter */}
-              <div className="mt-4 p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Attendance:</span>
-                  <span className="font-bold text-emerald-400">
-                    {liveEvent.checkedInCount} / {liveEvent.registeredCount} Checked In
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] text-gray-500">{f.date}</div>
+                  <span
+                    className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
+                    style={{ color: PRIORITY_COLORS[f.priority], background: PRIORITY_BG[f.priority] }}
+                  >
+                    {f.priority}
                   </span>
                 </div>
-                <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-                  <div
-                    style={{
-                      width: `${liveEvent.registeredCount > 0 ? (liveEvent.checkedInCount / liveEvent.registeredCount) * 100 : 0}%`,
-                    }}
-                    className="h-full rounded-full bg-emerald-500"
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-slate-400 pt-1">
-                  <span>{liveEvent.newFoundersCount} New Founders</span>
-                  <span>{liveEvent.existingFoundersCount} Existing</span>
-                </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <Link
-                href={`/events/${liveEvent.slug}/register`}
-                target="_blank"
-                className="flex-1 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold text-center transition flex items-center justify-center gap-1"
-              >
-                <span>Event QR Link</span>
-                <ExternalLink className="w-3 h-3" />
-              </Link>
-              <Link
-                href="/checkin"
-                className="flex-1 px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold text-center shadow-md shadow-rose-600/30 transition flex items-center justify-center gap-1"
-              >
-                <span>Check-in Desk</span>
-                <QrCode className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Row 3: High Priority Follow-ups & Recent Founders Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming High-Signal Follow-ups */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <CalendarCheck className="w-4 h-4 text-amber-400" />
-                Upcoming Priority Follow-ups
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Automated tasks generated from recent DraperU events and founder calls.
-              </p>
-            </div>
-            <Link
-              href="/follow-ups"
-              className="text-xs font-semibold text-rose-400 hover:underline"
-            >
-              View all ({metrics.followUpsCount.totalActive})
+      {/* ── Row 3: Recent Regs | Event Registrations | Top Cities ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Recent Registrations */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Recent Registrations</h3>
+            <Link href="/founders" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
+              View all
             </Link>
           </div>
-
-          <div className="space-y-2.5">
-            {followUps.map((f) => (
-              <div
-                key={f.id}
-                className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition flex items-start justify-between gap-3"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-xs">{f.founderName}</span>
-                    <span className="text-[11px] text-slate-400">({f.founderCompany})</span>
-                    {f.status === 'overdue' && (
-                      <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                        Overdue
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-300 line-clamp-1">{f.title}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 pt-0.5">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-400" />
-                      Due: {f.dueDate}
-                    </span>
-                    <span>Assigned: <strong className="text-slate-300">{f.assignedTo}</strong></span>
-                  </div>
-                </div>
-
-                <Link
-                  href={`/founders/${f.founderId}`}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium shrink-0 transition"
+          <div className="space-y-3">
+            {recentRegistrations.map((r) => (
+              <div key={r.name} className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                  style={{ background: '#2563eb' }}
                 >
-                  Action
-                </Link>
+                  {r.name.split(' ').map((n) => n[0]).join('')}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-gray-900">{r.name}</div>
+                  <div className="text-[10px] text-gray-500">{r.company} · {r.sector}</div>
+                </div>
+                <div className="shrink-0 flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400">{r.time}</span>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recently Registered / Verified Founders */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-rose-500" />
-                Recent Founder Ingestions
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Founders active in the ecosystem across India.
-              </p>
-            </div>
-            <Link
-              href="/founders"
-              className="text-xs font-semibold text-rose-400 hover:underline"
-            >
+        {/* Event Registrations Today */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Event Registrations (Today)</h3>
+            <Link href="/events" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
               View all
             </Link>
           </div>
-
-          <div className="space-y-2.5">
-            {recentFounders.map((founder) => (
-              <Link
-                key={founder.id}
-                href={`/founders/${founder.id}`}
-                className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-rose-500/40 transition flex items-center justify-between gap-3 group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-white text-xs border border-slate-700 group-hover:border-rose-500/40">
-                    {founder.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-xs group-hover:text-rose-400 transition">
-                        {founder.name}
-                      </span>
-                      <span className="font-mono text-[10px] text-rose-400 bg-rose-500/10 px-1.5 rounded">
-                        {founder.id}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      {founder.designation} at <strong className="text-slate-300">{founder.startup.name}</strong> • {founder.startup.sector}
-                    </div>
-                  </div>
+          <div className="flex items-center gap-5">
+            <DonutChart
+              slices={[
+                { color: '#2563eb', pct: 68 },
+                { color: '#f59e0b', pct: 32 },
+              ]}
+              total={127}
+              label="Total"
+            />
+            <div className="flex-1 space-y-2.5">
+              {[
+                { dot: '#2563eb', label: 'Checked In', val: '86 (57%)' },
+                { dot: '#10b981', label: 'Registered', val: '127 (100%)' },
+                { dot: '#f59e0b', label: 'Pending', val: '41 (33%)' },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dot }} />
+                  <span className="text-[11px] text-gray-600 flex-1">{item.label}</span>
+                  <span className="text-[11px] font-bold text-gray-900">{item.val}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-                <div className="text-right shrink-0">
-                  <Badge variant={founder.funding.type === 'Funded' ? 'success' : 'neutral'} size="sm">
-                    {founder.funding.stage}
-                  </Badge>
-                  <span className="block text-[10px] text-slate-400 mt-0.5">{founder.location.split(',')[0]}</span>
+        {/* Top Cities */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Top Cities</h3>
+            <Link href="/analytics" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
+              View all
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {topCities.map((c) => (
+              <div key={c.city}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-gray-700">{c.city}</span>
+                  <span className="text-xs font-bold text-gray-900">{c.count.toLocaleString()}</span>
                 </div>
-              </Link>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(c.count / c.max) * 100}%`,
+                      background: '#2563eb',
+                    }}
+                  />
+                </div>
+              </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Website Flow Section ── */}
+      <div
+        className="rounded-2xl p-5 overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2050 100%)' }}
+      >
+        <div className="flex items-center gap-2 mb-5">
+          <h3 className="text-sm font-bold text-white">WEBSITE FLOW</h3>
+          <span className="text-[11px] text-blue-300">(Single QR for New Founder Registration)</span>
+        </div>
+
+        <div className="flex items-start gap-2 overflow-x-auto pb-2">
+          {websiteFlowSteps.map((step, i) => (
+            <React.Fragment key={step.n}>
+              {/* Step card */}
+              <div className="shrink-0 flex flex-col items-center text-center" style={{ width: 128 }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white border-2 border-blue-400 mb-2" style={{ background: '#1e40af' }}>
+                  {step.n}
+                </div>
+                <div className="w-full bg-white/10 rounded-xl p-3 border border-white/10">
+                  <div className="text-xl mb-2">{step.icon}</div>
+                  <div className="text-[11px] font-bold text-white mb-1">{step.title}</div>
+                  <div className="text-[9px] text-blue-200 leading-snug">{step.desc}</div>
+                  {step.n === 2 && (
+                    <div className="mt-2">
+                      <div className="text-[9px] text-blue-300 mb-1">Email or Phone</div>
+                      <div className="bg-blue-600 text-white text-[9px] font-bold rounded-md px-2 py-1">Continue</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              {i < websiteFlowSteps.length - 1 && (
+                <div className="shrink-0 flex items-center pt-10">
+                  <ArrowUpRight className="w-4 h-4 text-blue-400 rotate-90 opacity-60" />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+
+          {/* Founder ID Card */}
+          <div className="shrink-0 ml-2" style={{ width: 140 }}>
+            <div className="bg-white rounded-xl p-3 shadow-lg">
+              <div className="text-[9px] font-bold text-gray-500 mb-1">Your Founder ID</div>
+              <div className="text-sm font-black" style={{ color: '#2563eb' }}>DRU-F-00124</div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-bold text-blue-700">RS</div>
+                <div>
+                  <div className="text-[9px] font-bold text-gray-900">Rahul Sharma</div>
+                  <div className="text-[8px] text-gray-500">Founder & CEO</div>
+                  <div className="text-[8px] text-gray-500">XYZ Technologies</div>
+                </div>
+              </div>
+              <button
+                className="mt-2 w-full text-[9px] font-bold text-white rounded-md py-1"
+                style={{ background: '#2563eb' }}
+              >
+                View My Profile
+              </button>
+            </div>
           </div>
         </div>
       </div>
