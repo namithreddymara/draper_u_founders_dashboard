@@ -27,6 +27,7 @@ import {
   Users,
   Edit,
   ArrowLeft,
+  Trash2,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 import { Founder, Interaction, FollowUp, InteractionType, PriorityLevel } from '@/types';
@@ -92,8 +93,8 @@ export default function FounderProfilePage() {
   if (!founder) {
     return (
       <div className="p-8 text-center space-y-4">
-        <h2 className="text-xl font-bold text-white">Founder not found ({id})</h2>
-        <Link href="/founders" className="text-xs text-rose-400 hover:underline">
+        <h2 className="text-xl font-bold text-slate-900">Founder not found ({id})</h2>
+        <Link href="/founders" className="text-xs text-blue-600 hover:underline">
           Return to Founders Directory
         </Link>
       </div>
@@ -105,6 +106,11 @@ export default function FounderProfilePage() {
       isHighPriority: !founder.isHighPriority,
     });
     if (updated) setFounder(updated);
+  };
+
+  const handleDeleteFounder = () => {
+    if (!window.confirm(`Delete ${founder.name}? This action cannot be undone.`)) return;
+    if (dataService.deleteFounder(founder.id)) router.push('/founders');
   };
 
   const handleLogInteractionSubmit = (e: React.FormEvent) => {
@@ -184,7 +190,7 @@ export default function FounderProfilePage() {
       <div className="flex items-center justify-between">
         <Link
           href="/founders"
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition"
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Founders</span>
@@ -194,7 +200,7 @@ export default function FounderProfilePage() {
           <Link
             href={`/f/${founder.id}`}
             target="_blank"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-medium transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition"
           >
             <QrCode className="w-3.5 h-3.5" />
             <span>Public Pass</span>
@@ -204,11 +210,11 @@ export default function FounderProfilePage() {
       </div>
 
       {/* Hero Header Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 p-0.5 shadow-lg shadow-rose-600/20 shrink-0">
-              <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center overflow-hidden font-black text-2xl text-white">
+            <div className="w-16 h-16 rounded-2xl bg-blue-600 p-0.5 shadow-md shadow-blue-600/20 shrink-0">
+              <div className="w-full h-full bg-blue-50 rounded-2xl flex items-center justify-center overflow-hidden font-black text-2xl text-blue-700">
                 {founder.avatarUrl ? (
                   <img src={founder.avatarUrl} alt={founder.name} className="w-full h-full object-cover" />
                 ) : (
@@ -219,38 +225,38 @@ export default function FounderProfilePage() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black text-white tracking-tight">{founder.name}</h1>
-                <span className="font-mono text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/30">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">{founder.name}</h1>
+                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
                   {founder.id}
                 </span>
                 <button
                   onClick={toggleHighPriority}
                   className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border transition ${
                     founder.isHighPriority
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
-                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-900'
                   }`}
                 >
-                  <Flame className={`w-3.5 h-3.5 ${founder.isHighPriority ? 'text-rose-500' : 'text-slate-400'}`} />
+                  <Flame className={`w-3.5 h-3.5 ${founder.isHighPriority ? 'text-amber-600' : 'text-slate-400'}`} />
                   <span>{founder.isHighPriority ? 'VIP High Priority' : 'Mark VIP'}</span>
                 </button>
               </div>
 
               <p className="text-xs text-slate-400 mt-1">
-                {founder.designation} at <strong className="text-slate-200">{founder.startup.name}</strong> • {founder.startup.sector}
+                {founder.designation} at <strong className="text-slate-800">{founder.startup.name}</strong> • {founder.startup.sector}
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-400">
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-rose-400" />
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
                   {founder.location}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <Mail className="w-3.5 h-3.5 text-slate-500" />
                   {founder.email}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <Phone className="w-3.5 h-3.5 text-slate-500" />
                   {founder.phone}
                 </span>
               </div>
@@ -261,17 +267,24 @@ export default function FounderProfilePage() {
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <button
               onClick={() => setIsLogModalOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
             >
               <PhoneCall className="w-3.5 h-3.5 text-blue-400" />
               <span>Log Interaction</span>
             </button>
             <button
               onClick={() => setIsFollowUpModalOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
+              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition"
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               <span>Add Follow-up</span>
+            </button>
+            <button
+              onClick={handleDeleteFounder}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Founder</span>
             </button>
           </div>
         </div>
@@ -282,8 +295,8 @@ export default function FounderProfilePage() {
         {/* Left 2 Cols: 4 Structured Cards */}
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Personal Details */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
               <User className="w-4 h-4" />
               1. Personal Details
             </h3>
@@ -291,19 +304,19 @@ export default function FounderProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400">Full Name:</span>
-                <p className="font-semibold text-white mt-0.5">{founder.name}</p>
+                <p className="font-semibold text-slate-900 mt-0.5">{founder.name}</p>
               </div>
               <div>
                 <span className="text-slate-400">Designation:</span>
-                <p className="font-semibold text-white mt-0.5">{founder.designation}</p>
+                <p className="font-semibold text-slate-900 mt-0.5">{founder.designation}</p>
               </div>
               <div>
                 <span className="text-slate-400">Email:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">{founder.email}</p>
+                <p className="font-semibold text-slate-700 mt-0.5">{founder.email}</p>
               </div>
               <div>
                 <span className="text-slate-400">Phone / WhatsApp:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">{founder.phone}</p>
+                <p className="font-semibold text-slate-700 mt-0.5">{founder.phone}</p>
               </div>
               <div>
                 <span className="text-slate-400">LinkedIn:</span>
@@ -313,7 +326,7 @@ export default function FounderProfilePage() {
                       href={founder.linkedin}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-400 hover:underline flex items-center gap-1 font-medium"
+                      className="text-blue-600 hover:underline flex items-center gap-1 font-medium"
                     >
                       {founder.linkedin.replace('https://', '')}
                       <ExternalLink className="w-3 h-3" />
@@ -325,22 +338,22 @@ export default function FounderProfilePage() {
               </div>
               <div>
                 <span className="text-slate-400">City & Location:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">{founder.location}</p>
+                <p className="font-semibold text-slate-700 mt-0.5">{founder.location}</p>
               </div>
             </div>
 
             {founder.bio && (
-              <div className="pt-2 border-t border-slate-800 text-xs">
+              <div className="pt-2 border-t border-slate-200 text-xs">
                 <span className="text-slate-400">Bio:</span>
-                <p className="text-slate-300 mt-1 leading-relaxed">{founder.bio}</p>
+                <p className="text-slate-600 mt-1 leading-relaxed">{founder.bio}</p>
               </div>
             )}
           </div>
 
           {/* Card 2: Startup Profile */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
                 <Building className="w-4 h-4" />
                 2. Startup Profile
               </h3>
@@ -350,7 +363,7 @@ export default function FounderProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400">Startup Name:</span>
-                <p className="font-bold text-white text-sm mt-0.5">{founder.startup.name}</p>
+                <p className="font-bold text-slate-900 text-sm mt-0.5">{founder.startup.name}</p>
               </div>
               <div>
                 <span className="text-slate-400">Website:</span>
@@ -360,7 +373,7 @@ export default function FounderProfilePage() {
                       href={founder.startup.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-rose-400 hover:underline flex items-center gap-1 font-medium"
+                      className="text-blue-600 hover:underline flex items-center gap-1 font-medium"
                     >
                       {founder.startup.website}
                       <ExternalLink className="w-3 h-3" />
@@ -372,37 +385,37 @@ export default function FounderProfilePage() {
               </div>
               <div>
                 <span className="text-slate-400">Sector & Sub-sector:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">
+                <p className="font-semibold text-slate-700 mt-0.5">
                   {founder.startup.sector} {founder.startup.subSector ? `(${founder.startup.subSector})` : ''}
                 </p>
               </div>
               <div>
                 <span className="text-slate-400">Founded Year & Team Size:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">
+                <p className="font-semibold text-slate-700 mt-0.5">
                   {founder.startup.foundedYear || 2024} • {founder.startup.teamSize} members
                 </p>
               </div>
             </div>
 
             {founder.startup.problem && (
-              <div className="pt-2 border-t border-slate-800 text-xs">
+              <div className="pt-2 border-t border-slate-200 text-xs">
                 <span className="text-slate-400 font-semibold">Problem:</span>
-                <p className="text-slate-300 mt-0.5 leading-relaxed">{founder.startup.problem}</p>
+                <p className="text-slate-600 mt-0.5 leading-relaxed">{founder.startup.problem}</p>
               </div>
             )}
 
             {founder.startup.solution && (
               <div className="pt-1 text-xs">
                 <span className="text-slate-400 font-semibold">Solution:</span>
-                <p className="text-slate-300 mt-0.5 leading-relaxed">{founder.startup.solution}</p>
+                <p className="text-slate-600 mt-0.5 leading-relaxed">{founder.startup.solution}</p>
               </div>
             )}
           </div>
 
           {/* Card 3: Funding Details */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
                 3. Funding Track
               </h3>
@@ -414,19 +427,19 @@ export default function FounderProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400">Type:</span>
-                <p className="font-semibold text-white mt-0.5">{founder.funding.type}</p>
+                <p className="font-semibold text-slate-900 mt-0.5">{founder.funding.type}</p>
               </div>
               <div>
                 <span className="text-slate-400">Amount Raised:</span>
-                <p className="font-bold text-emerald-400 text-sm mt-0.5">
+                <p className="font-bold text-emerald-600 text-sm mt-0.5">
                   {founder.funding.amountRaised || 'Bootstrapped'}
                 </p>
               </div>
               <div>
                 <span className="text-slate-400">Currently Fundraising:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">
+                <p className="font-semibold text-slate-700 mt-0.5">
                   {founder.funding.currentlyFundraising ? (
-                    <span className="text-amber-400 font-bold">Yes (Target: {founder.funding.targetAmount || '$1M+'})</span>
+                    <span className="text-amber-600 font-bold">Yes (Target: {founder.funding.targetAmount || '$1M+'})</span>
                   ) : (
                     'No'
                   )}
@@ -434,7 +447,7 @@ export default function FounderProfilePage() {
               </div>
               <div>
                 <span className="text-slate-400">Investors:</span>
-                <p className="font-semibold text-slate-200 mt-0.5">
+                <p className="font-semibold text-slate-700 mt-0.5">
                   {founder.funding.investors.length > 0
                     ? founder.funding.investors.join(', ')
                     : 'Angel syndicate / None listed'}
@@ -444,8 +457,8 @@ export default function FounderProfilePage() {
           </div>
 
           {/* Card 4: DraperU Relationship */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4" />
               4. DraperU India Relationship
             </h3>
@@ -466,9 +479,9 @@ export default function FounderProfilePage() {
         {/* Right Col: Permanent Dynamic QR & 360° Timeline */}
         <div className="space-y-6">
           {/* Scannable Dynamic QR Card */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl text-center space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-center gap-1.5">
-              <QrCode className="w-4 h-4 text-rose-500" />
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm text-center space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-center gap-1.5">
+              <QrCode className="w-4 h-4 text-blue-600" />
               Permanent Founder Pass
             </h3>
 
@@ -486,14 +499,14 @@ export default function FounderProfilePage() {
               )}
             </div>
 
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-500">
               Printable QR for founder badge, event lanyard, or membership pass.
             </p>
 
             <Link
               href={`/f/${founder.id}`}
               target="_blank"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Badge Card</span>
@@ -501,33 +514,33 @@ export default function FounderProfilePage() {
           </div>
 
           {/* Complete Founder Timeline (Requirement 5) */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-rose-500" />
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
                   Complete Founder Timeline
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Unified history of event registrations, calls, and intros.
                 </p>
               </div>
               <button
                 onClick={() => setIsLogModalOpen(true)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition"
               >
                 <PlusCircle className="w-4 h-4" />
               </button>
             </div>
 
             {/* Timeline Stream */}
-            <div className="space-y-4 pt-2 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-800">
+            <div className="space-y-4 pt-2 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
               {interactions.map((int) => (
                 <div key={int.id} className="flex items-start gap-3 relative z-10 text-xs">
                   <div className="shrink-0 mt-0.5">{getInteractionIcon(int.type)}</div>
-                  <div className="flex-1 space-y-0.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+                  <div className="flex-1 space-y-0.5 p-3 rounded-2xl bg-slate-50 border border-slate-200">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white">{int.title}</h4>
+                      <h4 className="font-bold text-slate-900">{int.title}</h4>
                       <span className="text-[10px] text-slate-400">
                         {new Date(int.date).toLocaleDateString('en-IN', {
                           month: 'short',
@@ -535,7 +548,7 @@ export default function FounderProfilePage() {
                         })}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px] leading-relaxed">{int.description}</p>
+                    <p className="text-slate-600 text-[11px] leading-relaxed">{int.description}</p>
                     <span className="text-[10px] text-slate-400 block pt-1">
                       By {int.createdBy}
                     </span>
@@ -564,7 +577,7 @@ export default function FounderProfilePage() {
               onChange={(e) =>
                 setInteractionForm({ ...interactionForm, type: e.target.value as InteractionType })
               }
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             >
               <option value="call">📞 Phone Call</option>
               <option value="email">📧 Email Update</option>
@@ -576,7 +589,7 @@ export default function FounderProfilePage() {
 
           <div>
             <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-              Title / Summary <span className="text-rose-500">*</span>
+              Title / Summary <span className="text-blue-600">*</span>
             </label>
             <input
               type="text"
@@ -586,7 +599,7 @@ export default function FounderProfilePage() {
               onChange={(e) =>
                 setInteractionForm({ ...interactionForm, title: e.target.value })
               }
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -601,21 +614,21 @@ export default function FounderProfilePage() {
               onChange={(e) =>
                 setInteractionForm({ ...interactionForm, description: e.target.value })
               }
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setIsLogModalOpen(false)}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
+              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition"
             >
               Save Interaction
             </button>
@@ -633,7 +646,7 @@ export default function FounderProfilePage() {
         <form onSubmit={handleCreateFollowUpSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-              Follow-up Title <span className="text-rose-500">*</span>
+              Follow-up Title <span className="text-blue-600">*</span>
             </label>
             <input
               type="text"
@@ -641,7 +654,7 @@ export default function FounderProfilePage() {
               placeholder="e.g. Follow up regarding investor introduction"
               value={followUpForm.title}
               onChange={(e) => setFollowUpForm({ ...followUpForm, title: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -655,7 +668,7 @@ export default function FounderProfilePage() {
                 required
                 value={followUpForm.dueDate}
                 onChange={(e) => setFollowUpForm({ ...followUpForm, dueDate: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
@@ -666,7 +679,7 @@ export default function FounderProfilePage() {
               <select
                 value={followUpForm.assignedTo}
                 onChange={(e) => setFollowUpForm({ ...followUpForm, assignedTo: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
               >
                 <option value="Anshi">Anshi (Community Team)</option>
                 <option value="Rahul">Rahul (Founder Team)</option>
@@ -684,21 +697,21 @@ export default function FounderProfilePage() {
               placeholder="Add details about target check size, investor partner names, or cohort deadlines..."
               value={followUpForm.description}
               onChange={(e) => setFollowUpForm({ ...followUpForm, description: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setIsFollowUpModalOpen(false)}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
+              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition"
             >
               Create Follow-up
             </button>
