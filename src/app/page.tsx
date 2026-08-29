@@ -12,14 +12,17 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  ChevronDown,
   CheckCircle2,
   Clock,
   Circle,
-  ArrowUpRight,
+  PlusCircle,
+  QrCode,
+  Sparkles,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 import { ExecutiveMetrics, DraperUEvent, FollowUp, Founder } from '@/types';
+import { AddFounderModal } from '@/components/founders/AddFounderModal';
+import { FounderQRModal } from '@/components/founders/FounderQRModal';
 
 // ──────────────────────────────────────────────────
 // Helpers
@@ -62,68 +65,6 @@ function StatCard({
   );
 }
 
-// Simple SVG line chart
-function FounderGrowthChart() {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
-  const values = [1200, 1800, 2400, 3100, 3700, 4200, 4700, 5124];
-  const max = 6000;
-  const W = 340;
-  const H = 120;
-  const pad = { l: 28, r: 12, t: 10, b: 28 };
-
-  const pts = values.map((v, i) => ({
-    x: pad.l + (i / (values.length - 1)) * (W - pad.l - pad.r),
-    y: pad.t + (1 - v / max) * (H - pad.t - pad.b),
-  }));
-
-  const polyline = pts.map((p) => `${p.x},${p.y}`).join(' ');
-  const area = `${pts[0].x},${H - pad.b} ${polyline} ${pts[pts.length - 1].x},${H - pad.b}`;
-
-  return (
-    <div className="relative w-full" style={{ height: H + 20 }}>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {/* Area fill */}
-        <polygon points={area} fill="url(#lineGrad)" />
-        {/* Line */}
-        <polyline points={polyline} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {/* Last point dot */}
-        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill="#2563eb" stroke="white" strokeWidth="2" />
-        {/* Last value label */}
-        <text x={pts[pts.length - 1].x} y={pts[pts.length - 1].y - 8} textAnchor="middle" fill="#2563eb" fontSize="9" fontWeight="700">
-          5,124
-        </text>
-        {/* Y-axis gridlines */}
-        {[0, 2000, 4000, 6000].map((v) => {
-          const y = pad.t + (1 - v / max) * (H - pad.t - pad.b);
-          return (
-            <g key={v}>
-              <line x1={pad.l} y1={y} x2={W - pad.r} y2={y} stroke="#f0f4f8" strokeWidth="1" />
-              <text x={pad.l - 4} y={y + 3} textAnchor="end" fill="#9ca3af" fontSize="7">
-                {v === 0 ? '0' : `${v / 1000}K`}
-              </text>
-            </g>
-          );
-        })}
-        {/* X-axis labels */}
-        {months.map((m, i) => {
-          const x = pad.l + (i / (months.length - 1)) * (W - pad.l - pad.r);
-          return (
-            <text key={m} x={x} y={H - pad.b + 12} textAnchor="middle" fill="#9ca3af" fontSize="7">
-              {m}
-            </text>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
 // Donut chart (SVG)
 function DonutChart({
   slices,
@@ -139,7 +80,7 @@ function DonutChart({
   const cy = 70;
   const circumference = 2 * Math.PI * R;
 
-  let offset = -0.25 * circumference; // start from top
+  let offset = -0.25 * circumference;
   const arcs = slices.map((s) => {
     const len = (s.pct / 100) * circumference;
     const arc = { color: s.color, offset, len };
@@ -164,7 +105,6 @@ function DonutChart({
             style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
           />
         ))}
-        {/* inner white hole */}
         <circle cx={cx} cy={cy} r="38" fill="white" />
       </svg>
       <div className="relative z-10 text-center">
@@ -195,26 +135,30 @@ export default function ExecutiveDashboard() {
   const [metrics, setMetrics] = useState<ExecutiveMetrics | null>(null);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [recentFounders, setRecentFounders] = useState<Founder[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  useEffect(() => {
+  const refreshData = () => {
     dataService.init();
     setMetrics(dataService.getExecutiveMetrics());
     setFollowUps(dataService.getFollowUps().slice(0, 4));
     setRecentFounders(dataService.getFounders().slice(0, 5));
+  };
+
+  useEffect(() => {
+    refreshData();
+    const unsubscribe = dataService.subscribeToDataUpdates(() => {
+      refreshData();
+    });
+    return () => unsubscribe();
   }, []);
 
   if (!metrics) return null;
 
-  const today = new Date().toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
   const statCards = [
     {
       label: 'Total Founders',
-      value: 5124,
+      value: metrics.totalFounders || 5124,
       icon: Users,
       iconBg: '#2563eb',
       change: '↑ 12.4%',
@@ -222,7 +166,7 @@ export default function ExecutiveDashboard() {
     },
     {
       label: 'Startups',
-      value: 3208,
+      value: metrics.totalStartups || 3208,
       icon: Rocket,
       iconBg: '#7c3aed',
       change: '↑ 8.7%',
@@ -230,7 +174,7 @@ export default function ExecutiveDashboard() {
     },
     {
       label: 'Events',
-      value: 512,
+      value: metrics.totalEvents || 512,
       icon: CalendarDays,
       iconBg: '#0ea5e9',
       change: '↑ 16.2%',
@@ -246,7 +190,7 @@ export default function ExecutiveDashboard() {
     },
     {
       label: 'Follow-ups',
-      value: 43,
+      value: metrics.followUpsCount.totalActive || 43,
       icon: CalendarCheck,
       iconBg: '#6366f1',
       change: '↓ 5.1%',
@@ -254,7 +198,7 @@ export default function ExecutiveDashboard() {
     },
     {
       label: 'Hot Leads',
-      value: 87,
+      value: metrics.highPriorityFounders || 87,
       icon: Flame,
       iconBg: '#ef4444',
       change: '↑ 13.6%',
@@ -278,14 +222,6 @@ export default function ExecutiveDashboard() {
     { name: 'Neha Verma', topic: 'Mentorship Follow-up', date: '28 Aug, 2026', priority: 'Low', avatar: 'NV' },
   ];
 
-  const recentRegistrations = [
-    { name: 'Karthik Iyer', company: 'Nova AI', sector: 'AI / ML', time: '2m ago' },
-    { name: 'Sneha Patel', company: 'HealEase', sector: 'HealthTech', time: '5m ago' },
-    { name: 'Vikram Singh', company: 'FinFlow', sector: 'FinTech', time: '12m ago' },
-    { name: 'Meera Joshi', company: 'EduNova', sector: 'EdTech', time: '18m ago' },
-    { name: 'Rohit Mehta', company: 'GreenGrid', sector: 'CleanTech', time: '22m ago' },
-  ];
-
   const topCities = [
     { city: 'Bengaluru', count: 1248, max: 1248 },
     { city: 'Hyderabad', count: 892, max: 1248 },
@@ -294,34 +230,32 @@ export default function ExecutiveDashboard() {
     { city: 'Pune', count: 420, max: 1248 },
   ];
 
-  const eventRegSlices = [
-    { color: '#2563eb', pct: 57, label: 'Checked In', count: '86 (57%)' },
-    { color: '#10b981', pct: 100, label: 'Registered', count: '127 (100%)' },
-    { color: '#f59e0b', pct: 33, label: 'Pending', count: '41 (33%)' },
-  ];
-
-  const websiteFlowSteps = [
-    { n: 1, title: 'Scan QR Code', desc: 'Founder scans the DraperU registration QR', icon: '📱' },
-    { n: 2, title: 'Enter Contact', desc: 'Enter email or phone to continue', icon: '📧' },
-    { n: 3, title: 'Check Existing', desc: 'We check our records for existing founder', icon: '🔍' },
-    { n: 4, title: 'New Founder', desc: 'New founder? Fill the registration form', icon: '👤' },
-    { n: 5, title: 'Create Profile', desc: 'Profile created with unique Founder ID', icon: '✅' },
-    { n: 6, title: 'Registration Success', desc: 'Successfully registered! Welcome to DraperU', icon: '🎉' },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-black text-gray-900">
-            Welcome back, Anshi! 👋
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Here&apos;s what&apos;s happening in DraperU India today.</p>
+      {/* ── Quick Ingestion Action Header ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-bold text-slate-800">Founder Ingestion Hub</span>
+          <span className="text-[11px] text-slate-400">| Manual entry & Self-Registration QR</span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-gray-200 text-sm text-gray-600 font-medium shadow-sm">
-          <Calendar className="w-4 h-4 text-gray-400" />
-          <span>21 Aug, 2026</span>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setIsQRModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
+          >
+            <QrCode className="w-4 h-4 text-blue-600" />
+            <span>Registration QR</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ Add Founder</span>
+          </button>
         </div>
       </div>
 
@@ -332,35 +266,17 @@ export default function ExecutiveDashboard() {
         ))}
       </div>
 
-      {/* ── Row 2: Chart | Sectors | Follow-ups ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Founder Growth */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-bold text-gray-900">Founder Growth</h3>
-            <button className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1">
-              This Year <ChevronDown className="w-3 h-3" />
-            </button>
-          </div>
-          <FounderGrowthChart />
-          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>12.4% Growth this year</span>
-          </div>
-        </div>
-
+      {/* ── Row 2: Sectors | Follow-ups ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Startup Sectors */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-gray-900">Startup Sectors</h3>
-            <button className="flex items-center gap-1 text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1">
-              This Year <ChevronDown className="w-3 h-3" />
-            </button>
           </div>
           <div className="flex items-center gap-4">
             <DonutChart
               slices={sectorSlices.map((s) => ({ color: s.color, pct: s.pct }))}
-              total={3208}
+              total={metrics.totalStartups || 3208}
               label="Startups"
             />
             <div className="flex-1 space-y-1.5">
@@ -422,8 +338,8 @@ export default function ExecutiveDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentRegistrations.map((r) => (
-              <div key={r.name} className="flex items-center gap-3">
+            {recentFounders.map((r) => (
+              <div key={r.id} className="flex items-center gap-3">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
                   style={{ background: '#2563eb' }}
@@ -431,11 +347,13 @@ export default function ExecutiveDashboard() {
                   {r.name.split(' ').map((n) => n[0]).join('')}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-gray-900">{r.name}</div>
-                  <div className="text-[10px] text-gray-500">{r.company} · {r.sector}</div>
+                  <Link href={`/founders/${r.id}`} className="text-xs font-bold text-gray-900 hover:text-blue-600 truncate block">
+                    {r.name}
+                  </Link>
+                  <div className="text-[10px] text-gray-500 truncate">{r.startup.name} · {r.startup.sector}</div>
                 </div>
                 <div className="shrink-0 flex items-center gap-1.5">
-                  <span className="text-[10px] text-gray-400">{r.time}</span>
+                  <span className="text-[10px] font-mono font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{r.id}</span>
                   <div className="w-2 h-2 rounded-full bg-emerald-400" />
                 </div>
               </div>
@@ -506,69 +424,17 @@ export default function ExecutiveDashboard() {
         </div>
       </div>
 
-      {/* ── Website Flow Section ── */}
-      <div
-        className="rounded-2xl p-5 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2050 100%)' }}
-      >
-        <div className="flex items-center gap-2 mb-5">
-          <h3 className="text-sm font-bold text-white">WEBSITE FLOW</h3>
-          <span className="text-[11px] text-blue-300">(Single QR for New Founder Registration)</span>
-        </div>
+      {/* Modals */}
+      <AddFounderModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onFounderCreated={() => refreshData()}
+      />
 
-        <div className="flex items-start gap-2 overflow-x-auto pb-2">
-          {websiteFlowSteps.map((step, i) => (
-            <React.Fragment key={step.n}>
-              {/* Step card */}
-              <div className="shrink-0 flex flex-col items-center text-center" style={{ width: 128 }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white border-2 border-blue-400 mb-2" style={{ background: '#1e40af' }}>
-                  {step.n}
-                </div>
-                <div className="w-full bg-white/10 rounded-xl p-3 border border-white/10">
-                  <div className="text-xl mb-2">{step.icon}</div>
-                  <div className="text-[11px] font-bold text-white mb-1">{step.title}</div>
-                  <div className="text-[9px] text-blue-200 leading-snug">{step.desc}</div>
-                  {step.n === 2 && (
-                    <div className="mt-2">
-                      <div className="text-[9px] text-blue-300 mb-1">Email or Phone</div>
-                      <div className="bg-blue-600 text-white text-[9px] font-bold rounded-md px-2 py-1">Continue</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Arrow */}
-              {i < websiteFlowSteps.length - 1 && (
-                <div className="shrink-0 flex items-center pt-10">
-                  <ArrowUpRight className="w-4 h-4 text-blue-400 rotate-90 opacity-60" />
-                </div>
-              )}
-            </React.Fragment>
-          ))}
-
-          {/* Founder ID Card */}
-          <div className="shrink-0 ml-2" style={{ width: 140 }}>
-            <div className="bg-white rounded-xl p-3 shadow-lg">
-              <div className="text-[9px] font-bold text-gray-500 mb-1">Your Founder ID</div>
-              <div className="text-sm font-black" style={{ color: '#2563eb' }}>DRU-F-00124</div>
-              <div className="mt-1.5 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-bold text-blue-700">RS</div>
-                <div>
-                  <div className="text-[9px] font-bold text-gray-900">Rahul Sharma</div>
-                  <div className="text-[8px] text-gray-500">Founder & CEO</div>
-                  <div className="text-[8px] text-gray-500">XYZ Technologies</div>
-                </div>
-              </div>
-              <button
-                className="mt-2 w-full text-[9px] font-bold text-white rounded-md py-1"
-                style={{ background: '#2563eb' }}
-              >
-                View My Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FounderQRModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+      />
     </div>
   );
 }
