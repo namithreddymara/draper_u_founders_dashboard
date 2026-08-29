@@ -208,7 +208,7 @@ export default function ExecutiveDashboard() {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map((card) => (
           <StatCard key={card.label} {...card} />
         ))}
@@ -280,27 +280,46 @@ export default function ExecutiveDashboard() {
               View all
             </Link>
           </div>
-          <div className="space-y-3">
-            {recentFounders.map((r) => (
-              <div key={r.id} className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                  style={{ background: '#2563eb' }}
-                >
-                  {r.name.split(' ').map((n) => n[0]).join('')}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <Link href={`/founders/${r.id}`} className="text-xs font-bold text-gray-900 hover:text-blue-600 truncate block">
-                    {r.name}
-                  </Link>
-                  <div className="text-[10px] text-gray-500 truncate">{r.startup.name} · {r.startup.sector}</div>
-                </div>
-                <div className="shrink-0 flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{r.id}</span>
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                </div>
-              </div>
-            ))}
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full min-w-[720px] text-left">
+              <thead>
+                <tr className="border-y border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
+                  <th className="px-5 py-2 font-semibold">Founder</th>
+                  <th className="px-3 py-2 font-semibold">Sector / Category</th>
+                  <th className="px-3 py-2 font-semibold">Organization</th>
+                  <th className="px-3 py-2 font-semibold">Registered On</th>
+                  <th className="px-3 py-2 font-semibold">ID</th>
+                  <th className="px-5 py-2 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentFounders.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70">
+                    <td className="px-5 py-2.5">
+                      <Link href={`/founders/${r.id}`} className="flex items-center gap-2.5 text-xs font-bold text-slate-800 hover:text-blue-600 whitespace-nowrap">
+                        <span className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 bg-blue-600">
+                          {r.name.split(' ').map((n) => n[0]).join('')}
+                        </span>
+                        {r.name}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2.5 text-[11px] text-slate-600 whitespace-nowrap">{r.startup.sector}</td>
+                    <td className="px-3 py-2.5 text-[11px] text-slate-600 whitespace-nowrap">{r.startup.name}</td>
+                    <td className="px-3 py-2.5 text-[11px] text-slate-500 whitespace-nowrap">
+                      {new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-[10px] font-mono font-semibold text-blue-600 bg-blue-50 px-1.5 py-1 rounded">{r.id}</span>
+                    </td>
+                    <td className="px-5 py-2.5 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" /> Registered
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
