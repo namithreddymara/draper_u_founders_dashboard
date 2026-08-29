@@ -7,20 +7,13 @@ import {
   Rocket,
   CalendarDays,
   ClipboardList,
-  CalendarCheck,
-  Flame,
   TrendingUp,
   TrendingDown,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Circle,
   PlusCircle,
   QrCode,
-  Sparkles,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
-import { ExecutiveMetrics, DraperUEvent, FollowUp, Founder } from '@/types';
+import { ExecutiveMetrics, DraperUEvent, Founder } from '@/types';
 import { AddFounderModal } from '@/components/founders/AddFounderModal';
 import { FounderQRModal } from '@/components/founders/FounderQRModal';
 
@@ -115,25 +108,12 @@ function DonutChart({
   );
 }
 
-const PRIORITY_COLORS: Record<string, string> = {
-  High: '#ef4444',
-  Medium: '#f59e0b',
-  Low: '#6b7280',
-};
-
-const PRIORITY_BG: Record<string, string> = {
-  High: '#fee2e2',
-  Medium: '#fef3c7',
-  Low: '#f3f4f6',
-};
-
 // ──────────────────────────────────────────────────
 // Main Dashboard
 // ──────────────────────────────────────────────────
 
 export default function ExecutiveDashboard() {
   const [metrics, setMetrics] = useState<ExecutiveMetrics | null>(null);
-  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [recentFounders, setRecentFounders] = useState<Founder[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -141,7 +121,6 @@ export default function ExecutiveDashboard() {
   const refreshData = () => {
     dataService.init();
     setMetrics(dataService.getExecutiveMetrics());
-    setFollowUps(dataService.getFollowUps().slice(0, 4));
     setRecentFounders(dataService.getFounders().slice(0, 5));
   };
 
@@ -188,22 +167,6 @@ export default function ExecutiveDashboard() {
       change: '↑ 10.3%',
       changeUp: true,
     },
-    {
-      label: 'Follow-ups',
-      value: metrics.followUpsCount.totalActive || 43,
-      icon: CalendarCheck,
-      iconBg: '#6366f1',
-      change: '↓ 5.1%',
-      changeUp: false,
-    },
-    {
-      label: 'Hot Leads',
-      value: metrics.highPriorityFounders || 87,
-      icon: Flame,
-      iconBg: '#ef4444',
-      change: '↑ 13.6%',
-      changeUp: true,
-    },
   ];
 
   const sectorSlices = [
@@ -213,21 +176,6 @@ export default function ExecutiveDashboard() {
     { color: '#10b981', pct: 12, name: 'HealthTech' },
     { color: '#ef4444', pct: 8, name: 'DeepTech' },
     { color: '#9ca3af', pct: 12, name: 'Others' },
-  ];
-
-  const upcomingFollowUps = [
-    { name: 'Rahul Sharma', topic: 'Investor Introduction', date: 'Tomorrow', priority: 'High', avatar: 'RS' },
-    { name: 'Priya Reddy', topic: 'Funding Discussion', date: '25 Aug, 2026', priority: 'Medium', avatar: 'PR' },
-    { name: 'Arjun Kumar', topic: 'Event Invitation', date: '27 Aug, 2026', priority: 'Medium', avatar: 'AK' },
-    { name: 'Neha Verma', topic: 'Mentorship Follow-up', date: '28 Aug, 2026', priority: 'Low', avatar: 'NV' },
-  ];
-
-  const topCities = [
-    { city: 'Bengaluru', count: 1248, max: 1248 },
-    { city: 'Hyderabad', count: 892, max: 1248 },
-    { city: 'Mumbai', count: 768, max: 1248 },
-    { city: 'Delhi', count: 512, max: 1248 },
-    { city: 'Pune', count: 420, max: 1248 },
   ];
 
   return (
@@ -266,7 +214,7 @@ export default function ExecutiveDashboard() {
         ))}
       </div>
 
-      {/* ── Row 2: Sectors | Follow-ups ── */}
+      {/* ── Row 2: Sectors | Event Registrations ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Startup Sectors */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -291,44 +239,39 @@ export default function ExecutiveDashboard() {
           </div>
         </div>
 
-        {/* Upcoming Follow-ups */}
+        {/* Event Registrations Today */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Upcoming Follow-ups</h3>
-            <Link href="/follow-ups" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
+            <h3 className="text-sm font-bold text-gray-900">Event Registrations (Today)</h3>
+            <Link href="/events" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
               View all
             </Link>
           </div>
-          <div className="space-y-3">
-            {upcomingFollowUps.map((f) => (
-              <div key={f.name} className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                  style={{ background: '#2563eb' }}
-                >
-                  {f.avatar}
+          <div className="flex items-center gap-5">
+            <DonutChart
+              slices={[{ color: '#2563eb', pct: 68 }, { color: '#f59e0b', pct: 32 }]}
+              total={127}
+              label="Total"
+            />
+            <div className="flex-1 space-y-2.5">
+              {[
+                { dot: '#2563eb', label: 'Checked In', val: '86 (57%)' },
+                { dot: '#10b981', label: 'Registered', val: '127 (100%)' },
+                { dot: '#f59e0b', label: 'Pending', val: '41 (33%)' },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dot }} />
+                  <span className="text-[11px] text-gray-600 flex-1">{item.label}</span>
+                  <span className="text-[11px] font-bold text-gray-900">{item.val}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-gray-900 truncate">{f.name}</div>
-                  <div className="text-[10px] text-gray-500 truncate">{f.topic}</div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-[10px] text-gray-500">{f.date}</div>
-                  <span
-                    className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
-                    style={{ color: PRIORITY_COLORS[f.priority], background: PRIORITY_BG[f.priority] }}
-                  >
-                    {f.priority}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Row 3: Recent Regs | Event Registrations | Top Cities ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ── Row 3: Recent Registrations ── */}
+      <div className="grid grid-cols-1 gap-4">
         {/* Recent Registrations */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -361,67 +304,6 @@ export default function ExecutiveDashboard() {
           </div>
         </div>
 
-        {/* Event Registrations Today */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Event Registrations (Today)</h3>
-            <Link href="/events" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
-              View all
-            </Link>
-          </div>
-          <div className="flex items-center gap-5">
-            <DonutChart
-              slices={[
-                { color: '#2563eb', pct: 68 },
-                { color: '#f59e0b', pct: 32 },
-              ]}
-              total={127}
-              label="Total"
-            />
-            <div className="flex-1 space-y-2.5">
-              {[
-                { dot: '#2563eb', label: 'Checked In', val: '86 (57%)' },
-                { dot: '#10b981', label: 'Registered', val: '127 (100%)' },
-                { dot: '#f59e0b', label: 'Pending', val: '41 (33%)' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dot }} />
-                  <span className="text-[11px] text-gray-600 flex-1">{item.label}</span>
-                  <span className="text-[11px] font-bold text-gray-900">{item.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Top Cities */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900">Top Cities</h3>
-            <Link href="/analytics" className="text-xs font-semibold" style={{ color: '#2563eb' }}>
-              View all
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {topCities.map((c) => (
-              <div key={c.city}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-700">{c.city}</span>
-                  <span className="text-xs font-bold text-gray-900">{c.count.toLocaleString()}</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(c.count / c.max) * 100}%`,
-                      background: '#2563eb',
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Modals */}
