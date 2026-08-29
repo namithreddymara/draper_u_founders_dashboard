@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { AuthUser, authService } from '@/lib/authService';
 
 interface AuthContextType {
@@ -20,33 +20,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
-
   useEffect(() => {
-    // Initial session load
-    const current = authService.getCurrentUser();
-    // Default to Anshi Reddy if first time visit to make development seamless, but support real logout
-    if (!current && typeof window !== 'undefined') {
-      const hasLoggedOutExplicitly = localStorage.getItem('dru_has_logged_out');
-      if (!hasLoggedOutExplicitly) {
-        // Auto-seed admin session for initial demo
-        authService.login('admin@draperu.io', 'password123').then((res) => {
-          if (res.user) setUser(res.user);
-          setIsLoading(false);
-        });
-        return;
+    let mounted = true;
+    authService.getCurrentUserFromSession().then((current) => {
+      if (mounted) {
+        setUser(current);
+        setIsLoading(false);
       }
-    }
-
-    setUser(current);
-    setIsLoading(false);
+    });
 
     const handleAuthChanged = () => {
       setUser(authService.getCurrentUser());
     };
 
     window.addEventListener('dru_auth_changed', handleAuthChanged);
-    return () => window.removeEventListener('dru_auth_changed', handleAuthChanged);
+    return () => {
+      mounted = false;
+      window.removeEventListener('dru_auth_changed', handleAuthChanged);
+    };
   }, []);
 
   const login = async (email: string, password?: string) => {

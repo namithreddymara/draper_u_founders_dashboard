@@ -1,4 +1,5 @@
 import { UserRole } from '@/types';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export interface AuthUser {
   id: string;
@@ -12,71 +13,8 @@ export interface AuthUser {
 }
 
 const STORAGE_KEY_AUTH = 'dru_auth_user_v1';
-const STORAGE_KEY_USERS = 'dru_registered_users_v1';
-
-export const DEMO_ACCOUNTS: Array<{ user: AuthUser; password: string }> = [
-  {
-    user: {
-      id: 'usr_admin_01',
-      name: 'Anshi Reddy',
-      email: 'admin@draperu.io',
-      role: 'admin',
-      roleTitle: 'Executive Admin',
-      company: 'Draper University India',
-      createdAt: '2026-01-01',
-    },
-    password: 'password123',
-  },
-  {
-    user: {
-      id: 'usr_community_01',
-      name: 'Rohit Varma',
-      email: 'rohit@draperu.io',
-      role: 'community_team',
-      roleTitle: 'Community Lead',
-      company: 'Draper University India',
-      createdAt: '2026-02-15',
-    },
-    password: 'password123',
-  },
-  {
-    user: {
-      id: 'usr_events_01',
-      name: 'Priya Sen',
-      email: 'priya@draperu.io',
-      role: 'event_team',
-      roleTitle: 'Event Operations',
-      company: 'Draper University India',
-      createdAt: '2026-03-10',
-    },
-    password: 'password123',
-  },
-];
 
 class AuthService {
-  private getRegisteredUsers(): Array<{ user: AuthUser; password: string }> {
-    if (typeof window === 'undefined') return DEMO_ACCOUNTS;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_USERS);
-      if (!stored) {
-        localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(DEMO_ACCOUNTS));
-        return DEMO_ACCOUNTS;
-      }
-      return JSON.parse(stored);
-    } catch {
-      return DEMO_ACCOUNTS;
-    }
-  }
-
-  private saveRegisteredUsers(users: Array<{ user: AuthUser; password: string }>): void {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-    } catch (e) {
-      console.error('Failed to save users', e);
-    }
-  }
-
   public getCurrentUser(): AuthUser | null {
     if (typeof window === 'undefined') return null;
     try {
@@ -104,49 +42,23 @@ class AuthService {
   }
 
   public async login(email: string, password?: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-    const trimmedEmail = email.trim().toLowerCase();
-    const users = this.getRegisteredUsers();
-
-    const match = users.find((u) => u.user.email.toLowerCase() === trimmedEmail);
-    if (match) {
-      if (password && match.password && match.password !== password && password !== 'password123' && password !== 'draper123') {
-        return { success: false, error: 'Invalid password. Please check your credentials.' };
-      }
-      this.setCurrentUser(match.user);
-      return { success: true, user: match.user };
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Authentication is not configured. Add the Supabase environment variables.' };
     }
-
-    // Auto-create user if non-demo account logs in
-    const namePart = trimmedEmail.split('@')[0] || 'DraperU Member';
-    const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    const newUser: AuthUser = {
-      id: `usr_${Date.now()}`,
-      name: formattedName,
-      email: trimmedEmail,
-      role: 'admin',
-      roleTitle: 'Team Member',
-      company: 'DraperU Partner',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    users.push({ user: newUser, password: password || 'password123' });
-    this.saveRegisteredUsers(users);
-    this.setCurrentUser(newUser);
-    return { success: true, user: newUser };
+    if (!password) return { success: false, error: 'Please enter your password.' };
+    const trimmedEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
+    if (error || !data.user) return { success: false, error: error?.message || 'Invalid email or password.' };
+    const user = this.mapSupabaseUser(data.user);
+    this.setCurrentUser(user);
+    return { success: true, user };
   }
 
   public async loginWithGoogle(): Promise<{ success: boolean; user: AuthUser }> {
-    const googleUser: AuthUser = {
-      id: 'usr_google_anchi',
-      name: 'Anshi Reddy',
-      email: 'anshi.reddy@draperu.io',
-      role: 'admin',
-      roleTitle: 'Executive Director',
-      company: 'Draper University India',
-      createdAt: '2026-01-01',
-    };
-    this.setCurrentUser(googleUser);
-    return { success: true, user: googleUser };
+    if (!supabase) throw new Error('Authentication is not configured.');
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    if (error) throw error;
+    return { success: true, user: this.getCurrentUser() as AuthUser };
   }
 
   public async signup(data: {
@@ -156,27 +68,40 @@ class AuthService {
     role?: UserRole;
     company?: string;
   }): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-    const trimmedEmail = data.email.trim().toLowerCase();
-    const users = this.getRegisteredUsers();
-
-    if (users.some((u) => u.user.email.toLowerCase() === trimmedEmail)) {
-      return { success: false, error: 'An account with this email already exists. Please log in.' };
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Authentication is not configured. Add the Supabase environment variables.' };
     }
-
-    const newUser: AuthUser = {
-      id: `usr_${Date.now()}`,
-      name: data.name.trim(),
+    const trimmedEmail = data.email.trim().toLowerCase();
+    const { data: result, error } = await supabase.auth.signUp({
       email: trimmedEmail,
-      role: data.role || 'admin',
-      roleTitle: data.role === 'admin' ? 'Administrator' : 'Team Member',
-      company: data.company || 'Draper University Ecosystem',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
+      password: data.password,
+      options: { data: { name: data.name.trim(), company: data.company, role: data.role || 'admin' } },
+    });
+    if (error || !result.user) return { success: false, error: error?.message || 'Unable to create account.' };
+    const user = this.mapSupabaseUser(result.user);
+    if (result.session) this.setCurrentUser(user);
+    return { success: true, user };
+  }
 
-    users.push({ user: newUser, password: data.password });
-    this.saveRegisteredUsers(users);
-    this.setCurrentUser(newUser);
-    return { success: true, user: newUser };
+  public async getCurrentUserFromSession(): Promise<AuthUser | null> {
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) return null;
+    return this.mapSupabaseUser(data.session.user);
+  }
+
+  private mapSupabaseUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown>; created_at?: string }): AuthUser {
+    const metadata = user.user_metadata || {};
+    const role = metadata.role === 'community_team' || metadata.role === 'event_team' ? metadata.role : 'admin';
+    return {
+      id: user.id,
+      name: typeof metadata.name === 'string' ? metadata.name : user.email?.split('@')[0] || 'DraperU Member',
+      email: user.email || '',
+      role,
+      roleTitle: role === 'admin' ? 'Executive Admin' : role === 'community_team' ? 'Community Lead' : 'Event Operations',
+      company: typeof metadata.company === 'string' ? metadata.company : undefined,
+      createdAt: user.created_at || new Date().toISOString(),
+    };
   }
 
   public logout(): void {

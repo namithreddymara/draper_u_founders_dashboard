@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, LogIn, Sun, UserPlus, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn, Sun, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 function LoginFormContent() {
@@ -13,8 +13,8 @@ function LoginFormContent() {
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('admin@draperu.io');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [company, setCompany] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +51,8 @@ function LoginFormContent() {
           setLoading(false);
         }
       }
-    } catch (err: any) {
-      setError(err?.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       setLoading(false);
     }
   };
@@ -63,16 +63,10 @@ function LoginFormContent() {
     try {
       await loginWithGoogle();
       router.push(redirectUrl);
-    } catch (err: any) {
-      setError(err?.message || 'Google authentication failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google authentication failed');
       setLoading(false);
     }
-  };
-
-  const handleQuickFill = (accEmail: string) => {
-    setEmail(accEmail);
-    setPassword('password123');
-    setError(null);
   };
 
   return (
@@ -98,13 +92,8 @@ function LoginFormContent() {
         <div className="relative z-10">
           <div className="flex flex-col items-center gap-3 mb-10">
             {/* Shield Logo */}
-            <div className="w-20 h-20 relative flex items-center justify-center">
-              <svg viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M40 2L6 16V44C6 62 21 76 40 88C59 76 74 62 74 44V16L40 2Z" fill="#1e40af" stroke="#3b82f6" strokeWidth="2" />
-                <path d="M40 8L12 20V44C12 59 24 71 40 82C56 71 68 59 68 44V20L40 8Z" fill="#1d4ed8" />
-                <text x="40" y="58" textAnchor="middle" fill="white" fontSize="36" fontWeight="900" fontFamily="system-ui">D</text>
-                <path d="M32 22L40 14L36 30H44L36 38" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+            <div className="w-20 h-20 relative flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-[#404040]">
+              <img src="/draperu-logo.jpg" alt="Draper University Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
               <div className="text-3xl font-black tracking-widest text-white">
@@ -194,41 +183,6 @@ function LoginFormContent() {
                   : 'Join the premier Indian founder ecosystem'}
               </p>
             </div>
-
-            {/* Quick Demo Fill Buttons */}
-            {mode === 'login' && (
-              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs">
-                <div className="flex items-center justify-between mb-1.5 text-blue-900 font-semibold text-[11px]">
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    Quick Demo Logins:
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('admin@draperu.io')}
-                    className="py-1 px-1.5 rounded-lg bg-white border border-blue-200 text-blue-700 font-bold text-[10px] hover:bg-blue-600 hover:text-white transition truncate"
-                  >
-                    Admin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('rohit@draperu.io')}
-                    className="py-1 px-1.5 rounded-lg bg-white border border-blue-200 text-blue-700 font-bold text-[10px] hover:bg-blue-600 hover:text-white transition truncate"
-                  >
-                    Community
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('priya@draperu.io')}
-                    className="py-1 px-1.5 rounded-lg bg-white border border-blue-200 text-blue-700 font-bold text-[10px] hover:bg-blue-600 hover:text-white transition truncate"
-                  >
-                    Event Ops
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Error Notification */}
             {error && (
