@@ -127,7 +127,7 @@ export default function EntranceCheckInKiosk() {
   return (
     <div className="space-y-6">
       {/* Top Banner / Event Selector Header */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="event-registration-theme p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
@@ -171,7 +171,7 @@ export default function EntranceCheckInKiosk() {
 
       {/* Real-time Entrance KPIs Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+        <div className="event-registration-theme p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             Total Registered
           </span>
@@ -209,7 +209,7 @@ export default function EntranceCheckInKiosk() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+        <div className="event-registration-theme p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             New vs Existing
           </span>
@@ -253,7 +253,7 @@ export default function EntranceCheckInKiosk() {
       {/* Check-In Controls (Scanner & Fast Search Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 1/3: Barcode / QR Scanner Input Box */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div className="event-registration-theme p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <QrCode className="w-4 h-4 text-rose-500" />
@@ -331,7 +331,7 @@ export default function EntranceCheckInKiosk() {
         </div>
 
         {/* Right 2/3: Live Attendee Search & Tap-to-Checkin List */}
-        <div className="lg:col-span-2 p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div className="event-registration-theme lg:col-span-2 p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-indigo-400" />
