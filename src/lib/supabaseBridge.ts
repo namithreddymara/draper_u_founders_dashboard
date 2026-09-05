@@ -210,4 +210,39 @@ export class SupabaseBridge {
     });
     return !error;
   }
+
+  public static async fetchEventRegistrations(): Promise<EventRegistration[] | null> {
+    if (!supabase) return null;
+    try {
+      const [{ data: rows, error }, { data: founders }] = await Promise.all([
+        supabase.from('event_registrations').select('*').order('registered_at', { ascending: false }),
+        supabase.from('founders').select('id, name, email, phone, startup_name, startup_sector'),
+      ]);
+      if (error || !rows) return null;
+
+      return rows.map((row: any) => {
+        const founder = (founders || []).find((candidate: any) => candidate.id === row.founder_id);
+        return {
+          id: row.id,
+          eventId: row.event_id,
+          eventTitle: row.event_id,
+          founderId: row.founder_id,
+          founderName: founder?.name || row.founder_id,
+          founderEmail: founder?.email || '',
+          founderPhone: founder?.phone || '',
+          founderCompany: founder?.startup_name || '',
+          founderSector: founder?.startup_sector || '',
+          isNewFounder: row.is_new_founder,
+          registeredAt: row.registered_at,
+          checkedIn: row.checked_in,
+          checkedInAt: row.checked_in_at,
+          source: row.source || 'QR Scan',
+          notes: row.notes,
+        };
+      });
+    } catch (e) {
+      console.warn('Supabase fetchEventRegistrations error, using local data', e);
+      return null;
+    }
+  }
 }

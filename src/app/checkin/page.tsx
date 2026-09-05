@@ -41,12 +41,13 @@ export default function EntranceCheckInKiosk() {
 
   useEffect(() => {
     dataService.init();
-    const allEvents = dataService.getEvents();
-    setEvents(allEvents);
-    if (allEvents.length > 0) {
-      setSelectedEventId(allEvents[0].id);
-      loadRegistrations(allEvents[0].id);
-    }
+    Promise.all([dataService.refreshEvents(), dataService.refreshRegistrations()]).then(([allEvents]) => {
+      setEvents(allEvents);
+      if (allEvents.length > 0) {
+        setSelectedEventId(allEvents[0].id);
+        setRegistrations(dataService.getRegistrations(allEvents[0].id));
+      }
+    });
   }, []);
 
   const loadRegistrations = (eventId: string) => {

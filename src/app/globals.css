@@ -47,6 +47,27 @@ body {
   animation: fadeIn 0.25s ease-out both;
 }
 
+/* Public event forms use the same light workspace palette as the dashboard. */
+.event-registration-theme .bg-slate-900 { background-color: #ffffff !important; }
+.event-registration-theme .bg-gradient-to-br { background-image: none !important; background-color: #ffffff !important; }
+.event-registration-theme .bg-slate-950,
+.event-registration-theme .bg-slate-950\/60 { background-color: #f8fafc !important; }
+.event-registration-theme .text-white { color: #0f172a !important; }
+.event-registration-theme .text-slate-100,
+.event-registration-theme .text-slate-200,
+.event-registration-theme .text-slate-300 { color: #334155 !important; }
+.event-registration-theme .text-slate-400,
+.event-registration-theme .text-slate-500 { color: #64748b !important; }
+.event-registration-theme .border-slate-800,
+.event-registration-theme .border-slate-700\/60 { border-color: #e2e8f0 !important; }
+.event-registration-theme input,
+.event-registration-theme select,
+.event-registration-theme textarea { color: #0f172a !important; background-color: #ffffff !important; border-color: #cbd5e1 !important; }
+.event-registration-theme .text-rose-400,
+.event-registration-theme .text-rose-300 { color: #2563eb !important; }
+.event-registration-theme .bg-rose-600 { background-color: #2563eb !important; }
+.event-registration-theme .hover\:bg-rose-500:hover { background-color: #1d4ed8 !important; }
+
 /* Print styles */
 @media print {
   body {

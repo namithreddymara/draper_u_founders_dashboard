@@ -62,26 +62,26 @@ function EventRegistrationContent() {
     email: '',
     phone: '',
     linkedin: '',
-    location: 'Bengaluru, Karnataka',
-    designation: 'Founder & CEO',
+    location: '',
+    designation: '',
     // Startup
     startupName: '',
     website: '',
-    sector: 'AI / ML',
+    sector: '',
     subSector: '',
-    foundedYear: 2024,
-    stage: 'Early Traction' as StartupStage,
-    teamSize: '1-5',
-    businessModel: 'B2B' as BusinessModel,
+    foundedYear: '' as unknown as number,
+    stage: '' as StartupStage,
+    teamSize: '',
+    businessModel: '' as BusinessModel,
     problem: '',
     solution: '',
     // Funding
-    fundingType: 'Funded' as 'Funded' | 'Bootstrapped',
-    fundingStage: 'Seed' as FundingStage,
+    fundingType: '' as 'Funded' | 'Bootstrapped',
+    fundingStage: '' as FundingStage,
     amountRaised: '',
     investors: '',
-    currentlyFundraising: true,
-    targetAmount: '$1.0M',
+    currentlyFundraising: false,
+    targetAmount: '',
     // Draper
     relationship: 'Event attendee' as DraperURelationship,
     notes: '',
@@ -90,7 +90,7 @@ function EventRegistrationContent() {
   const [registeredFounder, setRegisteredFounder] = useState<Founder | null>(null);
   const [registeredEvent, setRegisteredEvent] = useState<DraperUEvent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [autoCheckIn, setAutoCheckIn] = useState(true);
+  const [autoCheckIn, setAutoCheckIn] = useState(false);
 
   useEffect(() => {
     dataService.init();
@@ -215,23 +215,23 @@ function EventRegistrationContent() {
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         linkedin: formData.linkedin.trim() || undefined,
-        location: formData.location,
-        designation: formData.designation,
+        location: formData.location.trim() || 'Not provided',
+        designation: formData.designation.trim() || 'Founder',
         startup: {
           name: formData.startupName.trim(),
           website: formData.website.trim() || undefined,
-          sector: formData.sector,
+          sector: formData.sector || 'Other',
           subSector: formData.subSector.trim() || undefined,
-          foundedYear: Number(formData.foundedYear) || 2024,
-          stage: formData.stage,
-          teamSize: formData.teamSize,
-          businessModel: formData.businessModel,
+          foundedYear: Number(formData.foundedYear) || undefined,
+          stage: formData.stage || 'Idea',
+          teamSize: formData.teamSize || 'Not provided',
+          businessModel: formData.businessModel || undefined,
           problem: formData.problem.trim() || undefined,
           solution: formData.solution.trim() || undefined,
         },
         funding: {
-          type: formData.fundingType,
-          stage: formData.fundingStage,
+          type: formData.fundingType || 'Bootstrapped',
+          stage: formData.fundingStage || 'Bootstrapped',
           amountRaised: formData.amountRaised.trim() || undefined,
           investors: formData.investors ? formData.investors.split(',').map((s) => s.trim()) : [],
           currentlyFundraising: formData.currentlyFundraising,
@@ -276,7 +276,7 @@ function EventRegistrationContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a11] text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden">
+    <div className="event-registration-theme min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden">
       {/* Ambient background glow */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-rose-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />

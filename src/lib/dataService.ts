@@ -356,6 +356,21 @@ class DataService {
     }
   }
 
+  public async refreshRegistrations(): Promise<EventRegistration[]> {
+    const localRegistrations = this.getRegistrations();
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      const remoteRegistrations = await SupabaseBridge.fetchEventRegistrations();
+      if (remoteRegistrations) {
+        setItem(STORAGE_KEYS.REGISTRATIONS, remoteRegistrations);
+        return remoteRegistrations;
+      }
+    } catch (err) {
+      console.warn('Unable to refresh registrations from Supabase, using local data', err);
+    }
+    return localRegistrations;
+  }
+
   public getEventById(idOrSlug: string): DraperUEvent | undefined {
     return this.getEvents().find((e) => e.id === idOrSlug || e.slug === idOrSlug);
   }
