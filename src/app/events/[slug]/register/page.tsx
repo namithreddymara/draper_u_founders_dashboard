@@ -80,7 +80,7 @@ function EventRegistrationContent() {
     fundingStage: '' as FundingStage,
     amountRaised: '',
     investors: '',
-    currentlyFundraising: false,
+    currentlyFundraising: undefined as boolean | undefined,
     targetAmount: '',
     // Draper
     relationship: 'Event attendee' as DraperURelationship,
@@ -234,7 +234,7 @@ function EventRegistrationContent() {
           stage: formData.fundingStage || 'Bootstrapped',
           amountRaised: formData.amountRaised.trim() || undefined,
           investors: formData.investors ? formData.investors.split(',').map((s) => s.trim()) : [],
-          currentlyFundraising: formData.currentlyFundraising,
+          currentlyFundraising: !!formData.currentlyFundraising,
           targetAmount: formData.targetAmount.trim() || undefined,
         },
         relationship: formData.relationship,
@@ -310,12 +310,12 @@ function EventRegistrationContent() {
 
           <div className="flex flex-wrap items-center gap-3 mt-4 text-xs text-slate-300">
             <span className="flex items-center gap-1 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60">
-              <Calendar className="w-3.5 h-3.5 text-rose-400" />
-              {event?.date ? new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '21 Aug 2026'}
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              {event?.date ? new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date unavailable'}
             </span>
             <span className="flex items-center gap-1 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60">
-              <MapPin className="w-3.5 h-3.5 text-rose-400" />
-              {event?.venue || 'Draper Startup House, Koramangala'}, {event?.city || 'Bengaluru'}
+              <MapPin className="w-3.5 h-3.5 text-blue-600" />
+              {event?.venue || 'Location unavailable'}{event?.city ? `, ${event.city}` : ''}
             </span>
           </div>
         </div>
@@ -648,6 +648,7 @@ function EventRegistrationContent() {
                     onChange={handleFormChange}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
+                    <option value="" disabled>Select a sector</option>
                     <option value="AI / ML">AI / ML</option>
                     <option value="SaaS">SaaS</option>
                     <option value="FinTech">FinTech</option>
@@ -670,6 +671,7 @@ function EventRegistrationContent() {
                     onChange={handleFormChange}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
+                    <option value="" disabled>Select startup stage</option>
                     <option value="Idea">Idea Stage</option>
                     <option value="MVP">MVP / Prototype</option>
                     <option value="Early Traction">Early Traction / Revenue</option>
@@ -711,6 +713,7 @@ function EventRegistrationContent() {
                     onChange={handleFormChange}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
+                    <option value="" disabled>Select funding stage</option>
                     <option value="Bootstrapped">Bootstrapped</option>
                     <option value="Pre-Seed">Pre-Seed</option>
                     <option value="Seed">Seed Round</option>
@@ -726,7 +729,7 @@ function EventRegistrationContent() {
                   </label>
                   <select
                     name="currentlyFundraising"
-                    value={formData.currentlyFundraising ? 'yes' : 'no'}
+                    value={formData.currentlyFundraising === undefined ? '' : formData.currentlyFundraising ? 'yes' : 'no'}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
@@ -735,6 +738,7 @@ function EventRegistrationContent() {
                     }
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
+                    <option value="" disabled>Choose an option</option>
                     <option value="yes">Yes (Looking for Angels / VCs)</option>
                     <option value="no">No (Not actively raising)</option>
                   </select>

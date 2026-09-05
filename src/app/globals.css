@@ -54,6 +54,9 @@ body {
 .event-registration-theme .bg-gradient-to-br { background-image: none !important; background-color: #ffffff !important; }
 .event-registration-theme .bg-slate-950,
 .event-registration-theme .bg-slate-950\/60 { background-color: #f8fafc !important; }
+.event-registration-theme .bg-slate-800,
+.event-registration-theme .bg-slate-800\/40,
+.event-registration-theme .bg-slate-800\/80 { background-color: #eff6ff !important; }
 .event-registration-theme .bg-emerald-950\/30,
 .event-registration-theme .bg-emerald-950\/40,
 .event-registration-theme .bg-emerald-500\/10,
@@ -102,7 +105,8 @@ body {
 .event-registration-theme .shadow-emerald-900\/30,
 .event-registration-theme .shadow-rose-600\/30 { --tw-shadow-color: rgb(37 99 235 / 0.2) !important; }
 .event-registration-theme .border-slate-800,
-.event-registration-theme .border-slate-700\/60 { border-color: #e2e8f0 !important; }
+.event-registration-theme .border-slate-700,
+.event-registration-theme .border-slate-700\/60 { border-color: #bfdbfe !important; }
 .event-registration-theme input,
 .event-registration-theme select,
 .event-registration-theme textarea { color: #0f172a !important; background-color: #ffffff !important; border-color: #cbd5e1 !important; }
