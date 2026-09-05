@@ -335,6 +335,20 @@ function EventRegistrationContent() {
             <form onSubmit={handleCheckIdentifier} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+
+            <div className="relative flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-slate-800" />
+              <span className="text-[10px] uppercase tracking-wider text-slate-500">New to DraperU?</span>
+              <div className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStep('new_form')}
+              className="w-full px-4 py-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold transition"
+            >
+              Register as a New Attendee
+            </button>
                   Email Address or Mobile Number <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
