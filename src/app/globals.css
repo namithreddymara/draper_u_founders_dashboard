@@ -54,8 +54,16 @@ body {
 .event-registration-theme .bg-gradient-to-br { background-image: none !important; background-color: #ffffff !important; }
 .event-registration-theme .bg-slate-950,
 .event-registration-theme .bg-slate-950\/60 { background-color: #f8fafc !important; }
-.event-registration-theme .bg-emerald-950\/30 { background-color: #ecfdf5 !important; }
-.event-registration-theme .bg-amber-950\/30 { background-color: #fffbeb !important; }
+.event-registration-theme .bg-emerald-950\/30,
+.event-registration-theme .bg-emerald-950\/40,
+.event-registration-theme .bg-emerald-500\/10,
+.event-registration-theme .bg-emerald-500\/15,
+.event-registration-theme .bg-amber-950\/30,
+.event-registration-theme .bg-amber-500\/10,
+.event-registration-theme .bg-indigo-500\/10,
+.event-registration-theme .bg-indigo-500\/15,
+.event-registration-theme .bg-rose-500\/10,
+.event-registration-theme .bg-rose-500\/15 { background-color: #eff6ff !important; }
 .event-registration-theme .text-white { color: #0f172a !important; }
 .event-registration-theme .text-slate-100,
 .event-registration-theme .text-slate-200,
@@ -66,6 +74,33 @@ body {
 .event-registration-theme .text-emerald-400 { color: #047857 !important; }
 .event-registration-theme .text-amber-300,
 .event-registration-theme .text-amber-400 { color: #b45309 !important; }
+.event-registration-theme .text-indigo-400,
+.event-registration-theme .text-indigo-300,
+.event-registration-theme .text-emerald-300,
+.event-registration-theme .text-emerald-400,
+.event-registration-theme .text-amber-300,
+.event-registration-theme .text-amber-400,
+.event-registration-theme .text-rose-300,
+.event-registration-theme .text-rose-400,
+.event-registration-theme .text-rose-500 { color: #2563eb !important; }
+.event-registration-theme .bg-emerald-500,
+.event-registration-theme .bg-emerald-600,
+.event-registration-theme .bg-amber-500,
+.event-registration-theme .bg-rose-600,
+.event-registration-theme .bg-indigo-600 { background-color: #2563eb !important; }
+.event-registration-theme .border-emerald-500\/30,
+.event-registration-theme .border-emerald-500\/40,
+.event-registration-theme .border-amber-500\/20,
+.event-registration-theme .border-amber-500\/30,
+.event-registration-theme .border-indigo-500\/30,
+.event-registration-theme .border-rose-500\/20,
+.event-registration-theme .border-rose-500\/30,
+.event-registration-theme .border-rose-500\/40 { border-color: #bfdbfe !important; }
+.event-registration-theme .hover\:bg-emerald-500:hover,
+.event-registration-theme .hover\:bg-rose-500:hover,
+.event-registration-theme .hover\:bg-indigo-500:hover { background-color: #1d4ed8 !important; }
+.event-registration-theme .shadow-emerald-900\/30,
+.event-registration-theme .shadow-rose-600\/30 { --tw-shadow-color: rgb(37 99 235 / 0.2) !important; }
 .event-registration-theme .border-slate-800,
 .event-registration-theme .border-slate-700\/60 { border-color: #e2e8f0 !important; }
 .event-registration-theme input,

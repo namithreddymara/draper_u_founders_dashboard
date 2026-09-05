@@ -125,7 +125,7 @@ export default function EntranceCheckInKiosk() {
   const existingCount = registrations.length - newCount;
 
   return (
-    <div className="space-y-6">
+    <div className="event-registration-theme space-y-6">
       {/* Top Banner / Event Selector Header */}
       <div className="event-registration-theme p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
