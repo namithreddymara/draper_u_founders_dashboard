@@ -17,6 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isPublic =
     PUBLIC_ROUTES.some((r) => pathname.startsWith(r)) ||
+    (pathname.startsWith('/events/') && pathname.endsWith('/register')) ||
     (pathname.includes('/checkin') && typeof window !== 'undefined' && window.location.search.includes(KIOSK_PARAM));
 
   // Route protection
