@@ -86,10 +86,10 @@ function EventsManagementContent() {
         setEvents((current) => current.filter((candidate) => candidate.id !== event.id));
         if (selectedQRPosterEvent?.id === event.id) setSelectedQRPosterEvent(null);
       } else {
-        alert('Unable to delete this event. Please try again.');
+        alert('The event could not be deleted from the shared database. Run the latest Supabase schema policy, then try again.');
       }
     } catch (err) {
-      alert('Unable to delete this event. Please try again.');
+      alert('The event could not be deleted from the shared database. Run the latest Supabase schema policy, then try again.');
     }
   };
 

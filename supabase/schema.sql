@@ -175,6 +175,7 @@ CREATE POLICY "Allow public delete access on founders" ON founders FOR DELETE US
 CREATE POLICY "Allow public read access on events" ON events FOR SELECT USING (true);
 CREATE POLICY "Allow public insert access on events" ON events FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update access on events" ON events FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete access on events" ON events FOR DELETE USING (true);
 
 CREATE POLICY "Allow public read access on event_registrations" ON event_registrations FOR SELECT USING (true);
 CREATE POLICY "Allow public insert access on event_registrations" ON event_registrations FOR INSERT WITH CHECK (true);
