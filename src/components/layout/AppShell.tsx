@@ -15,9 +15,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  const isPublicEventRegistration = /^\/events\/[^/]+\/register\/?$/.test(pathname);
   const isPublic =
     PUBLIC_ROUTES.some((r) => pathname.startsWith(r)) ||
-    (pathname.startsWith('/events/') && pathname.endsWith('/register')) ||
+    isPublicEventRegistration ||
     (pathname.includes('/checkin') && typeof window !== 'undefined' && window.location.search.includes(KIOSK_PARAM));
 
   // Route protection
