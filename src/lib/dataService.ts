@@ -313,7 +313,20 @@ class DataService {
     const filtered = founders.filter((f) => f.id !== id);
     if (filtered.length === founders.length) return false;
     setItem(STORAGE_KEYS.FOUNDERS, filtered);
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.deleteFounder(id).catch(() => {});
+    });
     return true;
+  }
+
+  public async deleteFounderAndSync(id: string): Promise<boolean> {
+    const founders = this.getFounders();
+    const filtered = founders.filter((founder) => founder.id !== id);
+    if (filtered.length === founders.length) return false;
+    setItem(STORAGE_KEYS.FOUNDERS, filtered);
+
+    const { SupabaseBridge } = await import('./supabaseBridge');
+    return SupabaseBridge.isReady() ? SupabaseBridge.deleteFounder(id) : true;
   }
 
   // --- Events CRUD ---
@@ -400,6 +413,18 @@ class DataService {
     setItem(STORAGE_KEYS.EVENTS, events);
     this.syncEvent(events[index]).catch(() => {});
     return events[index];
+  }
+
+  public async deleteEvent(id: string): Promise<boolean> {
+    const events = this.getEvents();
+    const filtered = events.filter((event) => event.id !== id);
+    if (filtered.length === events.length) return false;
+
+    setItem(STORAGE_KEYS.EVENTS, filtered);
+    setItem(STORAGE_KEYS.REGISTRATIONS, this.getRegistrations().filter((registration) => registration.eventId !== id));
+
+    const { SupabaseBridge } = await import('./supabaseBridge');
+    return SupabaseBridge.isReady() ? SupabaseBridge.deleteEvent(id) : true;
   }
 
   // --- Registrations & Check-In ---

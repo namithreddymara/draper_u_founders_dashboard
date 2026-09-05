@@ -133,6 +133,13 @@ export class SupabaseBridge {
     }
   }
 
+  public static async deleteFounder(id: string): Promise<boolean> {
+    if (!supabase) return false;
+    const { error } = await supabase.from('founders').delete().eq('id', id);
+    if (error) console.warn('Supabase founder delete error:', error.message);
+    return !error;
+  }
+
   public static async fetchEvents(): Promise<DraperUEvent[] | null> {
     if (!supabase) return null;
     try {
@@ -192,6 +199,13 @@ export class SupabaseBridge {
       capacity: event.capacity,
       allow_walkins: event.allowWalkins,
     });
+    return !error;
+  }
+
+  public static async deleteEvent(id: string): Promise<boolean> {
+    if (!supabase) return false;
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) console.warn('Supabase event delete error:', error.message);
     return !error;
   }
 

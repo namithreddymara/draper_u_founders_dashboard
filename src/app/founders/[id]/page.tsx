@@ -108,9 +108,13 @@ export default function FounderProfilePage() {
     if (updated) setFounder(updated);
   };
 
-  const handleDeleteFounder = () => {
+  const handleDeleteFounder = async () => {
     if (!window.confirm(`Delete ${founder.name}? This action cannot be undone.`)) return;
-    if (dataService.deleteFounder(founder.id)) router.push('/founders');
+    try {
+      if (await dataService.deleteFounderAndSync(founder.id)) router.push('/founders');
+    } catch (err) {
+      alert('Unable to delete founder. Please try again.');
+    }
   };
 
   const handleLogInteractionSubmit = (e: React.FormEvent) => {

@@ -18,6 +18,7 @@ import {
   ArrowRight,
   TrendingUp,
   UserCheck,
+  Trash2,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 import { DraperUEvent } from '@/types';
@@ -75,6 +76,21 @@ function EventsManagementContent() {
 
     setEvents(dataService.getEvents());
     setIsCreateModalOpen(false);
+  };
+
+  const handleDeleteEvent = async (event: DraperUEvent) => {
+    if (!window.confirm(`Delete ${event.title}? This will also remove its registrations.`)) return;
+    try {
+      const deleted = await dataService.deleteEvent(event.id);
+      if (deleted) {
+        setEvents((current) => current.filter((candidate) => candidate.id !== event.id));
+        if (selectedQRPosterEvent?.id === event.id) setSelectedQRPosterEvent(null);
+      } else {
+        alert('Unable to delete this event. Please try again.');
+      }
+    } catch (err) {
+      alert('Unable to delete this event. Please try again.');
+    }
   };
 
   const filteredEvents = events.filter((e) => {
@@ -232,6 +248,16 @@ function EventsManagementContent() {
                 <span>Check-in Desk</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteEvent(evt)}
+                aria-label={`Delete ${evt.title}`}
+                title="Delete event"
+                className="p-2 rounded-xl border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ))}
