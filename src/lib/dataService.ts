@@ -8,21 +8,13 @@ import {
   ExecutiveMetrics,
   UserRole,
 } from '@/types';
-import {
-  INITIAL_EVENTS,
-  INITIAL_FOUNDERS,
-  INITIAL_REGISTRATIONS,
-  INITIAL_INTERACTIONS,
-  INITIAL_FOLLOW_UPS,
-} from './mockData';
-
 const STORAGE_KEYS = {
-  FOUNDERS: 'dru_founders_v1',
-  EVENTS: 'dru_events_v1',
-  REGISTRATIONS: 'dru_registrations_v1',
-  INTERACTIONS: 'dru_interactions_v1',
-  FOLLOW_UPS: 'dru_follow_ups_v1',
-  CURRENT_ROLE: 'dru_current_role_v1',
+  FOUNDERS: 'dru_founders_v2',
+  EVENTS: 'dru_events_v2',
+  REGISTRATIONS: 'dru_registrations_v2',
+  INTERACTIONS: 'dru_interactions_v2',
+  FOLLOW_UPS: 'dru_follow_ups_v2',
+  CURRENT_ROLE: 'dru_current_role_v2',
 };
 
 // Safe LocalStorage helpers
@@ -88,22 +80,7 @@ export function subscribeToDataUpdates(callback: () => void): () => void {
 class DataService {
   // --- Initialization ---
   public init(): void {
-    if (typeof window === 'undefined') return;
-    if (!localStorage.getItem(STORAGE_KEYS.FOUNDERS)) {
-      setItem(STORAGE_KEYS.FOUNDERS, INITIAL_FOUNDERS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-      setItem(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.REGISTRATIONS)) {
-      setItem(STORAGE_KEYS.REGISTRATIONS, INITIAL_REGISTRATIONS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.INTERACTIONS)) {
-      setItem(STORAGE_KEYS.INTERACTIONS, INITIAL_INTERACTIONS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.FOLLOW_UPS)) {
-      setItem(STORAGE_KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
-    }
+    // Data is created through the app or loaded from the configured backend.
   }
 
   public resetToDefaults(): void {
@@ -113,7 +90,6 @@ class DataService {
     localStorage.removeItem(STORAGE_KEYS.REGISTRATIONS);
     localStorage.removeItem(STORAGE_KEYS.INTERACTIONS);
     localStorage.removeItem(STORAGE_KEYS.FOLLOW_UPS);
-    this.init();
   }
 
   // --- Role Management ---
@@ -234,11 +210,52 @@ class DataService {
 
   // --- Founders CRUD ---
   public getFounders(): Founder[] {
-    return getItem<Founder[]>(STORAGE_KEYS.FOUNDERS, INITIAL_FOUNDERS);
+    return getItem<Founder[]>(STORAGE_KEYS.FOUNDERS, []);
+  }
+
+  public async refreshFounders(): Promise<Founder[]> {
+    const localFounders = this.getFounders();
+
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      const remoteFounders = await SupabaseBridge.fetchFounders();
+      if (remoteFounders) {
+        setItem(STORAGE_KEYS.FOUNDERS, remoteFounders);
+        return remoteFounders;
+      }
+    } catch (err) {
+      console.warn('Unable to refresh founders from Supabase, using local data', err);
+    }
+
+    return localFounders;
+  }
+
+  public async syncFounder(founder: Founder): Promise<boolean> {
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      return SupabaseBridge.upsertFounder(founder);
+    } catch (err) {
+      console.warn('Unable to sync founder to Supabase', err);
+      return false;
+    }
   }
 
   public getFounderById(id: string): Founder | undefined {
     return this.getFounders().find((f) => f.id === id);
+  }
+
+  public getFounderByEmailOrPhone(query: string): Founder | undefined {
+    const q = query.trim().toLowerCase();
+    return this.getFounders().find((f) => {
+      const email = (f.email || '').toLowerCase();
+      const phone = (f.phone || '').replace(/\D/g, '');
+      const cleanQ = q.replace(/\D/g, '');
+      return email === q || (cleanQ.length >= 7 && phone.includes(cleanQ));
+    });
+  }
+
+  public subscribeToDataUpdates(callback: () => void): () => void {
+    return subscribeToDataUpdates(callback);
   }
 
   public createFounder(founderData: Omit<Founder, 'id' | 'createdAt' | 'updatedAt'>): Founder {
@@ -301,7 +318,7 @@ class DataService {
 
   // --- Events CRUD ---
   public getEvents(): DraperUEvent[] {
-    return getItem<DraperUEvent[]>(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
+    return getItem<DraperUEvent[]>(STORAGE_KEYS.EVENTS, []);
   }
 
   public getEventById(idOrSlug: string): DraperUEvent | undefined {
@@ -335,7 +352,7 @@ class DataService {
 
   // --- Registrations & Check-In ---
   public getRegistrations(eventId?: string): EventRegistration[] {
-    const all = getItem<EventRegistration[]>(STORAGE_KEYS.REGISTRATIONS, INITIAL_REGISTRATIONS);
+    const all = getItem<EventRegistration[]>(STORAGE_KEYS.REGISTRATIONS, []);
     if (!eventId) return all;
     return all.filter((r) => r.eventId === eventId);
   }
@@ -503,13 +520,13 @@ class DataService {
 
   // --- Interactions / Timeline ---
   public getInteractions(founderId?: string): Interaction[] {
-    const all = getItem<Interaction[]>(STORAGE_KEYS.INTERACTIONS, INITIAL_INTERACTIONS);
+    const all = getItem<Interaction[]>(STORAGE_KEYS.INTERACTIONS, []);
     if (!founderId) return all;
     return all.filter((i) => i.founderId === founderId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   public addInteraction(interaction: Omit<Interaction, 'id'>): Interaction {
-    const interactions = getItem<Interaction[]>(STORAGE_KEYS.INTERACTIONS, INITIAL_INTERACTIONS);
+    const interactions = getItem<Interaction[]>(STORAGE_KEYS.INTERACTIONS, []);
     const newInt: Interaction = {
       ...interaction,
       id: `int-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -530,13 +547,13 @@ class DataService {
 
   // --- Follow-ups ---
   public getFollowUps(founderId?: string): FollowUp[] {
-    const all = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
+    const all = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, []);
     if (!founderId) return all;
     return all.filter((f) => f.founderId === founderId);
   }
 
   public createFollowUp(followUpData: Omit<FollowUp, 'id' | 'createdAt'>): FollowUp {
-    const followUps = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
+    const followUps = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, []);
     const newFlw: FollowUp = {
       ...followUpData,
       id: `flw-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -548,7 +565,7 @@ class DataService {
   }
 
   public updateFollowUp(id: string, updates: Partial<FollowUp>): FollowUp | undefined {
-    const followUps = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
+    const followUps = getItem<FollowUp[]>(STORAGE_KEYS.FOLLOW_UPS, []);
     const index = followUps.findIndex((f) => f.id === id);
     if (index === -1) return undefined;
 
@@ -654,18 +671,18 @@ class DataService {
     })).sort((a, b) => b.count - a.count);
 
     return {
-      totalFounders: founders.length + 5410, // Display realistic production scaling scale
-      totalStartups: founders.length + 3140,
-      totalEvents: events.length + 124,
+      totalFounders: founders.length,
+      totalStartups: new Set(founders.map((f) => f.startup.name)).size,
+      totalEvents: events.length,
       followUpsCount: {
-        overdue: overdue + 4,
-        today: today + 8,
-        thisWeek: thisWeek + 17,
-        upcoming: upcoming + 31,
-        totalActive: followUps.filter((f) => f.status !== 'completed').length + 55,
+        overdue,
+        today,
+        thisWeek,
+        upcoming,
+        totalActive: followUps.filter((f) => f.status !== 'completed').length,
       },
-      highPriorityFounders: founders.filter((f) => f.isHighPriority).length + 82,
-      newFoundersThisMonth: founders.length + 118,
+      highPriorityFounders: founders.filter((f) => f.isHighPriority).length,
+      newFoundersThisMonth: founders.filter((f) => f.createdAt.startsWith(todayStr.slice(0, 7))).length,
       sectorBreakdown,
       stageBreakdown,
       cityBreakdown,

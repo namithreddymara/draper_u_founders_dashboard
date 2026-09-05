@@ -48,8 +48,8 @@ export function Navbar({ onToggleMobileSidebar }: NavbarProps) {
 
         {/* Mobile Logo */}
         <Link href="/" className="lg:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-sm">
-            D
+          <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#3f3f3f] flex items-center justify-center shrink-0">
+            <img src="/draperu-logo.jpg" alt="DraperU Logo" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-slate-900 text-sm">
             DRAPER<span className="text-blue-600">U</span> INDIA

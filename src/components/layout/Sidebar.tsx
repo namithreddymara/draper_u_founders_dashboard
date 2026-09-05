@@ -54,15 +54,15 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-100 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 font-black text-sm">
-            D
+        <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100 shrink-0">
+          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-xs bg-[#3f3f3f] shrink-0 flex items-center justify-center">
+            <img src="/draperu-logo.jpg" alt="DraperU Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <div className="font-bold text-slate-900 text-sm tracking-tight leading-tight">
+            <div className="font-black text-slate-900 text-sm tracking-tight leading-tight">
               DRAPER<span className="text-blue-600">U</span>
             </div>
-            <div className="text-[10px] font-semibold tracking-wider text-slate-400">INDIA</div>
+            <div className="text-[10px] font-bold tracking-[0.2em] text-slate-400 mt-0.5">INDIA</div>
           </div>
         </div>
 

@@ -10,23 +10,34 @@ import {
   Users,
   Award,
   Calendar,
-  Layers,
-  ArrowUpRight,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
-import { ExecutiveMetrics, Founder } from '@/types';
+import { ExecutiveMetrics, Founder, EventRegistration } from '@/types';
 
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<ExecutiveMetrics | null>(null);
   const [founders, setFounders] = useState<Founder[]>([]);
+  const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
 
   useEffect(() => {
     dataService.init();
     setMetrics(dataService.getExecutiveMetrics());
     setFounders(dataService.getFounders());
+    setRegistrations(dataService.getRegistrations());
   }, []);
 
   if (!metrics) return null;
+
+  const totalFounders = founders.length;
+  const repeatFounders = new Set(
+    registrations.reduce<string[]>((ids, registration) => {
+      if (ids.includes(registration.founderId)) return ids;
+      ids.push(registration.founderId);
+      return ids;
+    }, [])
+  ).size;
+  const repeatAttendanceRate = totalFounders ? Math.round((repeatFounders / totalFounders) * 100) : 0;
+  const completedFollowUps = metrics.followUpsCount.totalActive === 0 ? 0 : metrics.followUpsCount.totalActive;
 
   return (
     <div className="space-y-6">
@@ -59,23 +70,18 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="space-y-3 pt-1">
-            {[
-              { city: 'Bengaluru (Koramangala, Indiranagar, HSR)', count: '2,240 Founders', pct: 41, color: 'bg-blue-600' },
-              { city: 'Hyderabad (HITEC City, Gachibowli)', count: '1,380 Founders', pct: 25, color: 'bg-amber-500' },
-              { city: 'Delhi-NCR (Gurugram, Noida)', count: '910 Founders', pct: 17, color: 'bg-sky-500' },
-              { city: 'Mumbai (BKC, Lower Parel)', count: '540 Founders', pct: 10, color: 'bg-emerald-500' },
-              { city: 'Pune, Chennai & Tier-2', count: '350 Founders', pct: 7, color: 'bg-purple-500' },
-            ].map((hub, idx) => (
+            {metrics.cityBreakdown.map((hub, idx) => (
               <div key={idx} className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold text-slate-700">{hub.city}</span>
-                  <span className="text-slate-400 font-mono text-[11px]">{hub.count} ({hub.pct}%)</span>
+                  <span className="text-slate-400 font-mono text-[11px]">{hub.count} Founders</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div style={{ width: `${hub.pct}%` }} className={`h-full rounded-full ${hub.color}`} />
+                  <div style={{ width: `${totalFounders ? (hub.count / totalFounders) * 100 : 0}%` }} className={`h-full rounded-full ${['bg-blue-600', 'bg-amber-500', 'bg-sky-500', 'bg-emerald-500', 'bg-purple-500'][idx % 5]}`} />
                 </div>
               </div>
             ))}
+            {metrics.cityBreakdown.length === 0 && <p className="text-xs text-slate-400">No founder location data yet.</p>}
           </div>
         </div>
 
@@ -86,30 +92,18 @@ export default function AnalyticsPage() {
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               Funding Stages & Readiness
             </h3>
-            <span className="text-xs text-emerald-400 font-semibold">68% Actively Raising</span>
+            <span className="text-xs text-emerald-400 font-semibold">{founders.filter((founder) => founder.funding.currentlyFundraising).length} actively raising</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-400 text-[11px]">Bootstrapped Innovators</span>
-              <div className="text-xl font-bold text-slate-900">1,820</div>
-              <span className="text-[10px] text-emerald-400">Pre-seed ready candidates</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-400 text-[11px]">Seed & Pre-Series A</span>
-              <div className="text-xl font-bold text-emerald-400">2,140</div>
-              <span className="text-[10px] text-slate-400">Demo day shortlist</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-400 text-[11px]">Series A & Beyond</span>
-              <div className="text-xl font-bold text-blue-600">620</div>
-              <span className="text-[10px] text-slate-400">Ecosystem mentors</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-400 text-[11px]">Draper Cohort Alumni</span>
-              <div className="text-xl font-bold text-amber-400">180+</div>
-              <span className="text-[10px] text-amber-400/80">Silicon Valley alumni</span>
-            </div>
+            {metrics.stageBreakdown.map((stage, index) => (
+              <div key={stage.stage} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-slate-400 text-[11px]">{stage.stage}</span>
+                <div className={`text-xl font-bold ${['text-slate-900', 'text-emerald-400', 'text-blue-600', 'text-amber-400'][index % 4]}`}>{stage.count}</div>
+                <span className="text-[10px] text-slate-400">Founders</span>
+              </div>
+            ))}
+            {metrics.stageBreakdown.length === 0 && <p className="col-span-2 text-xs text-slate-400">No funding stage data yet.</p>}
           </div>
         </div>
       </div>
@@ -127,20 +121,20 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
             <span className="text-[11px] text-slate-400">Repeat Attendance Rate</span>
-            <div className="text-2xl font-black text-slate-900">73.4%</div>
+            <div className="text-2xl font-black text-slate-900">{repeatAttendanceRate}%</div>
             <p className="text-[10px] text-emerald-400">Attended 2+ DraperU events</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
             <span className="text-[11px] text-slate-400">Check-in Scan Speed</span>
-            <div className="text-2xl font-black text-emerald-400">1.8 sec</div>
-            <p className="text-[10px] text-slate-400">Average QR entrance verification</p>
+            <div className="text-2xl font-black text-emerald-400">{registrations.length ? 'Tracked' : '—'}</div>
+            <p className="text-[10px] text-slate-400">QR entrance verification</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
             <span className="text-[11px] text-slate-400">Follow-up SLA Completion</span>
-            <div className="text-2xl font-black text-blue-600">92%</div>
-            <p className="text-[10px] text-slate-400">Outreach within 72 hours</p>
+            <div className="text-2xl font-black text-blue-600">{completedFollowUps}</div>
+            <p className="text-[10px] text-slate-400">Active follow-ups</p>
           </div>
         </div>
       </div>

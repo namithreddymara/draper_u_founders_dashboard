@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Users,
   Search,
-  Filter,
   Flame,
   UserPlus,
   Building,
@@ -20,12 +19,13 @@ import {
   Sparkles,
   ArrowUpDown,
   CheckCircle2,
+  Share2,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 import { Founder, StartupStage, FundingStage, DraperURelationship } from '@/types';
 import { Badge } from '@/components/ui/Badge';
-import { Modal } from '@/components/ui/Modal';
-import { Suspense } from 'react';
+import { AddFounderModal } from '@/components/founders/AddFounderModal';
+import { FounderQRModal } from '@/components/founders/FounderQRModal';
 
 function FoundersCRMContent() {
   const searchParams = useSearchParams();
@@ -38,29 +38,26 @@ function FoundersCRMContent() {
   const [selectedRelationship, setSelectedRelationship] = useState<string>('all');
   const [priorityOnly, setPriorityOnly] = useState<boolean>(filterParam === 'priority');
   
-  // Add Founder Modal
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newFounderForm, setNewFounderForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    linkedin: '',
-    location: 'Bengaluru, Karnataka',
-    designation: 'Founder & CEO',
-    startupName: '',
-    sector: 'AI / ML',
-    stage: 'Early Traction' as StartupStage,
-    fundingStage: 'Seed' as FundingStage,
-    fundingType: 'Funded' as 'Funded' | 'Bootstrapped',
-    relationship: 'Community member' as DraperURelationship,
-  });
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [lastAddedFounder, setLastAddedFounder] = useState<Founder | null>(null);
+
+  const loadData = async () => {
+    dataService.init();
+    setFounders(await dataService.refreshFounders());
+  };
 
   useEffect(() => {
-    dataService.init();
-    setFounders(dataService.getFounders());
+    loadData();
     if (filterParam === 'priority') {
       setPriorityOnly(true);
     }
+    // Auto-refresh when data changes via QR or other tabs
+    const unsubscribe = dataService.subscribeToDataUpdates(() => {
+      loadData();
+    });
+    return () => unsubscribe();
   }, [filterParam]);
 
   const sectors = ['all', 'AI / ML', 'SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'ClimateTech', 'EdTech'];
@@ -113,78 +110,73 @@ function FoundersCRMContent() {
     document.body.removeChild(link);
   };
 
-  const handleAddFounderSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFounderForm.name || !newFounderForm.email || !newFounderForm.startupName) {
-      alert('Please fill out required fields.');
-      return;
-    }
-
-    const created = dataService.createFounder({
-      name: newFounderForm.name,
-      email: newFounderForm.email,
-      phone: newFounderForm.phone || '+91 90000 00000',
-      linkedin: newFounderForm.linkedin || undefined,
-      location: newFounderForm.location,
-      designation: newFounderForm.designation,
-      startup: {
-        name: newFounderForm.startupName,
-        sector: newFounderForm.sector,
-        stage: newFounderForm.stage,
-        teamSize: '1-5',
-        businessModel: 'B2B',
-      },
-      funding: {
-        type: newFounderForm.fundingType,
-        stage: newFounderForm.fundingStage,
-        investors: [],
-        currentlyFundraising: true,
-      },
-      relationship: newFounderForm.relationship,
-      isHighPriority: false,
-      tags: ['Admin Ingestion', newFounderForm.sector],
-    });
-
-    setFounders(dataService.getFounders());
-    setIsAddModalOpen(false);
-  };
-
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30">
-              Founder Database
-            </span>
-            <span className="text-xs text-slate-400">All India Directory</span>
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight mt-1">
-            Founder CRM & Directory
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">
+            Founder Directory & CRM
           </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Total {founders.length} verified founders in DraperU India ecosystem.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Action Buttons: QR Scan & Manual Add */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setIsQRModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition shadow-xs cursor-pointer"
+          >
+            <QrCode className="w-4 h-4 text-blue-600" />
+            <span>Registration QR</span>
+          </button>
+
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold transition"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
           </button>
+
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition cursor-pointer"
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Add Founder</span>
+            <span>+ Add Founder</span>
           </button>
         </div>
       </div>
 
+      {/* Success Notification if a founder was recently added */}
+      {lastAddedFounder && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div>
+              <div className="text-xs font-bold text-emerald-900">
+                Founder Added Successfully!
+              </div>
+              <div className="text-[11px] text-emerald-700">
+                Issued Permanent ID: <strong>{lastAddedFounder.id}</strong> for <strong>{lastAddedFounder.name}</strong> ({lastAddedFounder.startup.name}).
+              </div>
+            </div>
+          </div>
+          <Link
+            href={`/f/${lastAddedFounder.id}`}
+            target="_blank"
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shrink-0"
+          >
+            View Pass
+          </Link>
+        </div>
+      )}
+
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -193,7 +185,7 @@ function FoundersCRMContent() {
               placeholder="Search by founder name, startup, DRU-F-ID, sector, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none transition"
             />
           </div>
 
@@ -202,7 +194,7 @@ function FoundersCRMContent() {
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {sectors.map((s) => (
                 <option key={s} value={s}>
@@ -215,7 +207,7 @@ function FoundersCRMContent() {
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {stages.map((stg) => (
                 <option key={stg} value={stg}>
@@ -228,7 +220,7 @@ function FoundersCRMContent() {
             <select
               value={selectedRelationship}
               onChange={(e) => setSelectedRelationship(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {relationships.map((r) => (
                 <option key={r} value={r}>
@@ -240,103 +232,105 @@ function FoundersCRMContent() {
             {/* High Priority Toggle */}
             <button
               onClick={() => setPriorityOnly(!priorityOnly)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
                 priorityOnly
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
+                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:text-slate-900'
               }`}
             >
-              <Flame className="w-3.5 h-3.5 text-rose-500" />
-              <span>High Priority Only</span>
+              <Flame className={`w-3.5 h-3.5 ${priorityOnly ? 'text-rose-600' : 'text-slate-400'}`} />
+              <span>VIP Only</span>
             </button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-          <span>Showing <strong className="text-white">{filteredFounders.length}</strong> matching founders</span>
-          {priorityOnly && <span className="text-rose-400 font-medium">Filtering by High Priority</span>}
+        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+          <span>Showing <strong className="text-slate-900">{filteredFounders.length}</strong> matching founders</span>
+          {priorityOnly && <span className="text-rose-600 font-semibold">Filtering by VIP / High Priority</span>}
         </div>
       </div>
 
       {/* Founders Table */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl overflow-hidden">
+      <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-[11px] font-semibold text-slate-400">
-                <th className="pb-3 pl-2">Founder & ID</th>
-                <th className="pb-3">Startup & Sector</th>
-                <th className="pb-3">Funding Stage</th>
-                <th className="pb-3">Location</th>
-                <th className="pb-3">DraperU Status</th>
-                <th className="pb-3 text-right pr-2">Actions</th>
+              <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-600">
+                <th className="py-3.5 pl-4">Founder & ID</th>
+                <th className="py-3.5 px-3">Startup & Sector</th>
+                <th className="py-3.5 px-3">Funding Stage</th>
+                <th className="py-3.5 px-3">Location</th>
+                <th className="py-3.5 px-3">Relationship</th>
+                <th className="py-3.5 pr-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {filteredFounders.map((founder) => (
-                <tr key={founder.id} className="hover:bg-slate-800/40 transition group">
-                  <td className="py-3.5 pl-2">
+                <tr key={founder.id} className="hover:bg-slate-50/80 transition group">
+                  <td className="py-3.5 pl-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-white text-xs border border-slate-700">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center font-bold text-blue-700 text-xs shrink-0">
                         {founder.name.charAt(0)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/founders/${founder.id}`}
-                            className="font-bold text-white hover:text-rose-400 transition"
+                            className="font-bold text-slate-900 hover:text-blue-600 transition"
                           >
                             {founder.name}
                           </Link>
                           {founder.isHighPriority && (
-                            <Flame className="w-3 h-3 text-rose-500" />
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                              VIP
+                            </span>
                           )}
                         </div>
-                        <div className="font-mono text-[10px] text-rose-400">{founder.id}</div>
+                        <div className="font-mono text-[10px] text-blue-600 font-semibold">{founder.id}</div>
                       </div>
                     </div>
                   </td>
 
-                  <td className="py-3.5">
-                    <div className="font-semibold text-slate-200">{founder.startup.name}</div>
-                    <div className="text-[10px] text-slate-400">{founder.startup.sector}</div>
+                  <td className="py-3.5 px-3">
+                    <div className="font-bold text-slate-900">{founder.startup.name}</div>
+                    <div className="text-[10px] text-slate-500">{founder.startup.sector}</div>
                   </td>
 
-                  <td className="py-3.5">
-                    <Badge variant={founder.funding.type === 'Funded' ? 'success' : 'neutral'} size="sm">
+                  <td className="py-3.5 px-3">
+                    <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
                       {founder.funding.stage}
-                    </Badge>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
+                    </span>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
                       {founder.funding.amountRaised || 'Bootstrapped'}
                     </div>
                   </td>
 
-                  <td className="py-3.5 text-slate-300">
+                  <td className="py-3.5 px-3 text-slate-600">
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-rose-400" />
+                      <MapPin className="w-3 h-3 text-slate-400" />
                       {founder.location.split(',')[0]}
                     </span>
                   </td>
 
-                  <td className="py-3.5">
-                    <Badge variant="gold" size="sm">
+                  <td className="py-3.5 px-3">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
                       {founder.relationship}
-                    </Badge>
+                    </span>
                   </td>
 
-                  <td className="py-3.5 text-right pr-2">
+                  <td className="py-3.5 pr-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <Link
                         href={`/f/${founder.id}`}
                         target="_blank"
-                        title="View Dynamic QR Pass"
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                        title="View Dynamic Digital Pass"
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-blue-600 transition"
                       >
                         <QrCode className="w-3.5 h-3.5" />
                       </Link>
                       <Link
                         href={`/founders/${founder.id}`}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-200 text-xs font-semibold transition"
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-xs font-bold transition"
                       >
                         View Profile
                       </Link>
@@ -356,125 +350,28 @@ function FoundersCRMContent() {
         </div>
       </div>
 
-      {/* Add Founder Modal */}
-      <Modal
+      {/* Manual Add Founder Modal */}
+      <AddFounderModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Founder to CRM"
-        subtitle="Manually create a permanent DraperU Founder record with automatic DRU-F-ID."
-      >
-        <form onSubmit={handleAddFounderSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Founder Full Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Rahul Sharma"
-                value={newFounderForm.name}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, name: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              />
-            </div>
+        onFounderCreated={(newF) => {
+          setLastAddedFounder(newF);
+          loadData();
+        }}
+      />
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Designation
-              </label>
-              <input
-                type="text"
-                value={newFounderForm.designation}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, designation: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Email Address <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="rahul@company.ai"
-                value={newFounderForm.email}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, email: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="+91 98765 43210"
-                value={newFounderForm.phone}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, phone: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Startup Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. XYZ Technologies"
-                value={newFounderForm.startupName}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, startupName: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                Sector
-              </label>
-              <select
-                value={newFounderForm.sector}
-                onChange={(e) => setNewFounderForm({ ...newFounderForm, sector: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-              >
-                <option value="AI / ML">AI / ML</option>
-                <option value="SaaS">SaaS</option>
-                <option value="FinTech">FinTech</option>
-                <option value="HealthTech">HealthTech</option>
-                <option value="DeepTech">DeepTech</option>
-                <option value="ClimateTech">ClimateTech</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition"
-            >
-              Save Founder
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Self-Registration QR Modal */}
+      <FounderQRModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+      />
     </div>
   );
 }
 
-export default function FoundersCRMPage() {
+export default function FoundersPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading Founder CRM...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500">Loading Founders...</div>}>
       <FoundersCRMContent />
     </Suspense>
   );

@@ -115,13 +115,19 @@ function DonutChart({
 export default function ExecutiveDashboard() {
   const [metrics, setMetrics] = useState<ExecutiveMetrics | null>(null);
   const [recentFounders, setRecentFounders] = useState<Founder[]>([]);
+  const [registrationCount, setRegistrationCount] = useState(0);
+  const [checkedInCount, setCheckedInCount] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   const refreshData = () => {
     dataService.init();
     setMetrics(dataService.getExecutiveMetrics());
-    setRecentFounders(dataService.getFounders().slice(0, 5));
+    const founders = dataService.getFounders();
+    const registrations = dataService.getRegistrations();
+    setRecentFounders(founders.slice(0, 5));
+    setRegistrationCount(registrations.length);
+    setCheckedInCount(registrations.filter((registration) => registration.checkedIn).length);
   };
 
   useEffect(() => {
@@ -137,46 +143,46 @@ export default function ExecutiveDashboard() {
   const statCards = [
     {
       label: 'Total Founders',
-      value: metrics.totalFounders || 5124,
+      value: metrics.totalFounders,
       icon: Users,
       iconBg: '#2563eb',
-      change: '↑ 12.4%',
+      change: metrics.totalFounders ? 'Live data' : 'No data yet',
       changeUp: true,
     },
     {
       label: 'Startups',
-      value: metrics.totalStartups || 3208,
+      value: metrics.totalStartups,
       icon: Rocket,
       iconBg: '#7c3aed',
-      change: '↑ 8.7%',
+      change: metrics.totalStartups ? 'Live data' : 'No data yet',
       changeUp: true,
     },
     {
       label: 'Events',
-      value: metrics.totalEvents || 512,
+      value: metrics.totalEvents,
       icon: CalendarDays,
       iconBg: '#0ea5e9',
-      change: '↑ 16.2%',
+      change: metrics.totalEvents ? 'Live data' : 'No data yet',
       changeUp: true,
     },
     {
       label: 'Registrations',
-      value: 1248,
+      value: registrationCount,
       icon: ClipboardList,
       iconBg: '#10b981',
-      change: '↑ 10.3%',
+      change: registrationCount ? 'Live data' : 'No data yet',
       changeUp: true,
     },
   ];
 
-  const sectorSlices = [
-    { color: '#2563eb', pct: 28, name: 'AI / ML' },
-    { color: '#7c3aed', pct: 24, name: 'SaaS' },
-    { color: '#f59e0b', pct: 16, name: 'FinTech' },
-    { color: '#10b981', pct: 12, name: 'HealthTech' },
-    { color: '#ef4444', pct: 8, name: 'DeepTech' },
-    { color: '#9ca3af', pct: 12, name: 'Others' },
-  ];
+  const sectorColors = ['#2563eb', '#7c3aed', '#f59e0b', '#10b981', '#ef4444', '#9ca3af'];
+  const sectorSlices = metrics.sectorBreakdown.map((sector, index) => ({
+    color: sectorColors[index % sectorColors.length],
+    pct: sector.percentage,
+    name: sector.sector,
+  }));
+  const registrationPct = registrationCount ? Math.round((checkedInCount / registrationCount) * 100) : 0;
+  const pendingCount = registrationCount - checkedInCount;
 
   return (
     <div className="space-y-6">
@@ -224,7 +230,7 @@ export default function ExecutiveDashboard() {
           <div className="flex items-center gap-4">
             <DonutChart
               slices={sectorSlices.map((s) => ({ color: s.color, pct: s.pct }))}
-              total={metrics.totalStartups || 3208}
+              total={metrics.totalStartups}
               label="Startups"
             />
             <div className="flex-1 space-y-1.5">
@@ -249,15 +255,15 @@ export default function ExecutiveDashboard() {
           </div>
           <div className="flex items-center gap-5">
             <DonutChart
-              slices={[{ color: '#2563eb', pct: 68 }, { color: '#f59e0b', pct: 32 }]}
-              total={127}
+              slices={[{ color: '#2563eb', pct: registrationPct }, { color: '#f59e0b', pct: 100 - registrationPct }]}
+              total={registrationCount}
               label="Total"
             />
             <div className="flex-1 space-y-2.5">
               {[
-                { dot: '#2563eb', label: 'Checked In', val: '86 (57%)' },
-                { dot: '#10b981', label: 'Registered', val: '127 (100%)' },
-                { dot: '#f59e0b', label: 'Pending', val: '41 (33%)' },
+                { dot: '#2563eb', label: 'Checked In', val: `${checkedInCount} (${registrationPct}%)` },
+                { dot: '#10b981', label: 'Registered', val: `${registrationCount} (100%)` },
+                { dot: '#f59e0b', label: 'Pending', val: `${pendingCount} (${100 - registrationPct}%)` },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dot }} />
@@ -318,6 +324,9 @@ export default function ExecutiveDashboard() {
                     </td>
                   </tr>
                 ))}
+                {recentFounders.length === 0 && (
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-xs text-slate-400">No founder registrations yet.</td></tr>
+                )}
               </tbody>
             </table>
           </div>

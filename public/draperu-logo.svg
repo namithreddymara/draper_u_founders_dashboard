@@ -1,5 +1,14 @@
-<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DraperU logo">
-  <path d="M100 8C75 28 51 35 25 38v42c0 53 29 91 75 112 46-21 75-59 75-112V38c-26-3-50-10-75-30Z" fill="#40B5F2"/>
-  <path d="M38 53c13-3 27-8 40-16-12 13-22 26-31 42 8-8 18-14 29-19-11 17-21 35-27 53-7-14-11-31-11-53v-7Z" fill="#168ACB"/>
-  <path d="M68 70h58v9h-9v48c0 14-9 22-25 22-15 0-24-8-24-22V79h-9v-9h30v9h-8v47c0 7 3 11 11 11s12-4 12-11V79h-6v-9Z" fill="#164E70"/>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Shield with Left Lightning Cutout -->
+  <path d="M100 20C125 36 155 42 175 45C175 95 155 145 100 178C45 145 25 95 25 45C38 43 52 39 64 33L50 56L68 53L35 102C32 84 30 65 30 45C52 42 80 36 100 20Z" fill="#32b5f6"/>
+  <!-- Main Shield Body -->
+  <path d="M100 22C125 38 152 44 172 47C172 94 152 142 100 174C48 142 28 94 28 47C35 46 44 43 52 39L38 62L56 59L31 98C29 82 28 65 28 47C48 44 75 38 100 22Z" fill="#38BDF8"/>
+  <path d="M100 22C125 38 152 44 172 47C172 94 152 142 100 174C50 144 28 98 28 47C42 45 60 38 72 31L53 58L72 54L34 105C30 87 28 68 28 47C48 44 75 38 100 22Z" fill="#32B5F6"/>
+  <!-- Lightning Bolt Cutout Feature -->
+  <polygon points="70,30 48,60 67,56 32,108 42,75 25,78" fill="#4B4B4B" opacity="0.15"/>
+  <!-- Classic Serif Letter D -->
+  <path d="M68 62H96C116 62 131 73 131 99C131 125 116 136 96 136H68V62ZM84 75V123H95C108 123 115 114 115 99C115 84 108 75 95 75H84Z" fill="#3E3E3E"/>
+  <!-- Serifs for D -->
+  <path d="M63 62H88V66H63V62Z" fill="#3E3E3E"/>
+  <path d="M63 132H88V136H63V132Z" fill="#3E3E3E"/>
 </svg>
