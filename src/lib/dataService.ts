@@ -321,6 +321,41 @@ class DataService {
     return getItem<DraperUEvent[]>(STORAGE_KEYS.EVENTS, []);
   }
 
+  public async refreshEvents(): Promise<DraperUEvent[]> {
+    const localEvents = this.getEvents();
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      const remoteEvents = await SupabaseBridge.fetchEvents();
+      if (remoteEvents) {
+        setItem(STORAGE_KEYS.EVENTS, remoteEvents);
+        return remoteEvents;
+      }
+    } catch (err) {
+      console.warn('Unable to refresh events from Supabase, using local data', err);
+    }
+    return localEvents;
+  }
+
+  public async syncEvent(event: DraperUEvent): Promise<boolean> {
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      return SupabaseBridge.upsertEvent(event);
+    } catch (err) {
+      console.warn('Unable to sync event to Supabase', err);
+      return false;
+    }
+  }
+
+  public async syncEventRegistration(registration: EventRegistration): Promise<boolean> {
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      return SupabaseBridge.upsertEventRegistration(registration);
+    } catch (err) {
+      console.warn('Unable to sync event registration to Supabase', err);
+      return false;
+    }
+  }
+
   public getEventById(idOrSlug: string): DraperUEvent | undefined {
     return this.getEvents().find((e) => e.id === idOrSlug || e.slug === idOrSlug);
   }
@@ -337,6 +372,7 @@ class DataService {
     };
     events.unshift(newEvent);
     setItem(STORAGE_KEYS.EVENTS, events);
+    this.syncEvent(newEvent).catch(() => {});
     return newEvent;
   }
 
@@ -347,6 +383,7 @@ class DataService {
 
     events[index] = { ...events[index], ...updates };
     setItem(STORAGE_KEYS.EVENTS, events);
+    this.syncEvent(events[index]).catch(() => {});
     return events[index];
   }
 
@@ -438,6 +475,8 @@ class DataService {
       }
     }
 
+    setItem(STORAGE_KEYS.REGISTRATIONS, registrations);
+    this.syncEventRegistration(reg).catch(() => {});
     return { registration: reg, event: this.getEventById(event.id)! };
   }
 

@@ -94,22 +94,20 @@ function EventRegistrationContent() {
 
   useEffect(() => {
     dataService.init();
-    const foundEvent = dataService.getEventById(slug);
-    if (foundEvent) {
-      setEvent(foundEvent);
-    } else {
-      const events = dataService.getEvents();
-      if (events.length > 0) setEvent(events[0]);
-    }
+    Promise.all([dataService.refreshEvents(), dataService.refreshFounders()]).then(([events]) => {
+      const foundEvent = events.find((candidate) => candidate.id === slug || candidate.slug === slug);
+      if (foundEvent) setEvent(foundEvent);
+      else if (events.length > 0) setEvent(events[0]);
 
-    // Auto-detect founder if passed in QR link
-    if (queryFounderId) {
-      const foundFounder = dataService.getFounderById(queryFounderId.toUpperCase());
-      if (foundFounder) {
-        setExistingFounder(foundFounder);
-        setStep('existing_confirm');
+      // Auto-detect founder if passed in QR link
+      if (queryFounderId) {
+        const foundFounder = dataService.getFounderById(queryFounderId.toUpperCase());
+        if (foundFounder) {
+          setExistingFounder(foundFounder);
+          setStep('existing_confirm');
+        }
       }
-    }
+    });
   }, [slug, queryFounderId]);
 
   // Step 1: Identifier check

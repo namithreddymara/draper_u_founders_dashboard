@@ -51,7 +51,7 @@ function EventsManagementContent() {
 
   useEffect(() => {
     dataService.init();
-    setEvents(dataService.getEvents());
+    dataService.refreshEvents().then(setEvents);
   }, []);
 
   const handleCreateSubmit = (e: React.FormEvent) => {
