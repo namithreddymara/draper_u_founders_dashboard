@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Database,
-  Sparkles,
   RefreshCw,
   Layers,
   FileText,
@@ -18,13 +17,6 @@ import {
 import { dataService } from '@/lib/dataService';
 import { Founder, DuplicateDetectionResult, BusinessModel, FundingStage, StartupStage, DraperURelationship } from '@/types';
 import { Badge } from '@/components/ui/Badge';
-
-const SAMPLE_SHEET_DATA = `Name,Email,Phone,Company,Sector,Designation,City,LinkedIn
-"Karan Malhotra","karan@hypercloud.io","+91 98333 44556","HyperCloud Scale","SaaS","Co-Founder & CEO","Bengaluru","https://linkedin.com/in/karan-hyper"
-"Divya Varma","divya@pulsehealth.in","+91 97222 33445","Pulse Health","HealthTech","Founder","Hyderabad","https://linkedin.com/in/divya-pulse"
-"Rahul Sharma","rahul@xyz.com","+91 98765 43210","XYZ Technologies","AI / ML","Founder & CEO","Hyderabad","https://linkedin.com/in/rahulsharma-xyz"
-"Sameer Sen","sameer@voltenergy.tech","+91 98111 22334","VoltEnergy Systems","ClimateTech","Founder & CTO","Pune","https://linkedin.com/in/sameersen"
-"Rohan Das","rohan@finbridge.money","+91 99444 55667","FinBridge Global","FinTech","Co-Founder","Mumbai","https://linkedin.com/in/rohandas-fin"`;
 
 const IMPORT_FIELDS = [
   { field: 'id', label: 'Founder ID', aliases: ['Founder ID', 'ID'] },
@@ -117,6 +109,29 @@ export default function GoogleSheetImportPage() {
     dataService.init();
   }, []);
 
+  const prepareCsv = (csv: string): boolean => {
+    if (!csv.trim()) return false;
+
+    const csvRows = parseCsv(csv);
+    if (csvRows.length < 2) return false;
+
+    const hdrs = csvRows[0].map((header, index) => index === 0 ? header.replace(/^\uFEFF/, '').trim() : header.trim());
+    const rows: Record<string, string>[] = csvRows.slice(1).map((values) => {
+      const row: Record<string, string> = {};
+      hdrs.forEach((header, index) => { row[header] = values[index] || ''; });
+      return row;
+    });
+    const detectedMapping: Record<string, string> = {};
+    IMPORT_FIELDS.forEach((definition) => {
+      detectedMapping[definition.field] = hdrs.find((header) => definition.aliases.some((alias) => normalizeHeader(alias) === normalizeHeader(header))) || '';
+    });
+    setHeaders(hdrs);
+    setMapping((current) => ({ ...current, ...detectedMapping }));
+    setParsedRows(rows);
+    setStep(2);
+    return true;
+  };
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -126,7 +141,11 @@ export default function GoogleSheetImportPage() {
       return;
     }
     setSelectedFileName(file.name);
-    setRawCsv(await file.text());
+    const contents = await file.text();
+    setRawCsv(contents);
+    if (!prepareCsv(contents)) {
+      alert('The selected CSV does not contain a header row and at least one data row.');
+    }
   };
 
   const handleParseCSV = () => {
@@ -135,32 +154,9 @@ export default function GoogleSheetImportPage() {
       return;
     }
 
-    const csvRows = parseCsv(rawCsv.trim());
-    if (csvRows.length < 2) {
+    if (!prepareCsv(rawCsv)) {
       alert('Please enter at least 1 header row and 1 data row.');
-      return;
     }
-
-    const hdrs = csvRows[0].map((header, index) => index === 0 ? header.replace(/^\uFEFF/, '').trim() : header.trim());
-    setHeaders(hdrs);
-
-    const rows: Record<string, string>[] = [];
-    for (let i = 1; i < csvRows.length; i++) {
-      const values = csvRows[i];
-      const rowObj: Record<string, string> = {};
-      hdrs.forEach((h, idx) => {
-        rowObj[h] = values[idx] || '';
-      });
-      rows.push(rowObj);
-    }
-
-    const detectedMapping: Record<string, string> = {};
-    IMPORT_FIELDS.forEach((definition) => {
-      detectedMapping[definition.field] = hdrs.find((header) => definition.aliases.some((alias) => normalizeHeader(alias) === normalizeHeader(header))) || '';
-    });
-    setMapping((current) => ({ ...current, ...detectedMapping }));
-    setParsedRows(rows);
-    setStep(2);
   };
 
   const handleRunDuplicateScan = () => {
@@ -318,13 +314,6 @@ export default function GoogleSheetImportPage() {
               <FileSpreadsheet className="w-4 h-4 text-blue-600" />
               Spreadsheet CSV Content
             </h3>
-            <button
-              onClick={() => setRawCsv(SAMPLE_SHEET_DATA)}
-              className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Load Sample Founder Sheet</span>
-            </button>
           </div>
 
           <p className="text-xs text-slate-500">
