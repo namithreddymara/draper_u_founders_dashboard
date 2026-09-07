@@ -24,14 +24,14 @@ export default function InteractionsFeedPage() {
 
   useEffect(() => {
     dataService.init();
-    const allInt = dataService.getInteractions();
-    setInteractions(allInt);
-
-    const fMap: Record<string, Founder> = {};
-    dataService.getFounders().forEach((f) => {
-      fMap[f.id] = f;
+    void Promise.all([dataService.refreshInteractions(), dataService.refreshFounders()]).then(([allInt, founders]) => {
+      setInteractions(allInt);
+      const fMap: Record<string, Founder> = {};
+      founders.forEach((founder) => {
+        fMap[founder.id] = founder;
+      });
+      setFoundersMap(fMap);
     });
-    setFoundersMap(fMap);
   }, []);
 
   const getInteractionIcon = (type: InteractionType) => {

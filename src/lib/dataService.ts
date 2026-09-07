@@ -288,6 +288,16 @@ class DataService {
     return newFounder;
   }
 
+  public importFounder(founder: Founder): Founder {
+    const founders = this.getFounders().filter((existing) => existing.id !== founder.id);
+    founders.unshift(founder);
+    setItem(STORAGE_KEYS.FOUNDERS, founders);
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertFounder(founder).catch(() => {});
+    });
+    return founder;
+  }
+
   public updateFounder(id: string, updates: Partial<Founder>): Founder | undefined {
     const founders = this.getFounders();
     const index = founders.findIndex((f) => f.id === id);
@@ -382,6 +392,36 @@ class DataService {
       console.warn('Unable to refresh registrations from Supabase, using local data', err);
     }
     return localRegistrations;
+  }
+
+  public async refreshInteractions(): Promise<Interaction[]> {
+    const localInteractions = this.getInteractions();
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      const remoteInteractions = await SupabaseBridge.fetchInteractions();
+      if (remoteInteractions) {
+        setItem(STORAGE_KEYS.INTERACTIONS, remoteInteractions);
+        return remoteInteractions;
+      }
+    } catch (err) {
+      console.warn('Unable to refresh interactions from Supabase, using local data', err);
+    }
+    return localInteractions;
+  }
+
+  public async refreshFollowUps(): Promise<FollowUp[]> {
+    const localFollowUps = this.getFollowUps();
+    try {
+      const { SupabaseBridge } = await import('./supabaseBridge');
+      const remoteFollowUps = await SupabaseBridge.fetchFollowUps();
+      if (remoteFollowUps) {
+        setItem(STORAGE_KEYS.FOLLOW_UPS, remoteFollowUps);
+        return remoteFollowUps;
+      }
+    } catch (err) {
+      console.warn('Unable to refresh follow-ups from Supabase, using local data', err);
+    }
+    return localFollowUps;
   }
 
   public getEventById(idOrSlug: string): DraperUEvent | undefined {
@@ -612,6 +652,9 @@ class DataService {
     };
     interactions.unshift(newInt);
     setItem(STORAGE_KEYS.INTERACTIONS, interactions);
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertInteraction(newInt).catch(() => {});
+    });
 
     // update notesCount on founder
     const founder = this.getFounderById(interaction.founderId);
@@ -640,6 +683,9 @@ class DataService {
     };
     followUps.unshift(newFlw);
     setItem(STORAGE_KEYS.FOLLOW_UPS, followUps);
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertFollowUp(newFlw).catch(() => {});
+    });
     return newFlw;
   }
 
@@ -650,6 +696,9 @@ class DataService {
 
     followUps[index] = { ...followUps[index], ...updates };
     setItem(STORAGE_KEYS.FOLLOW_UPS, followUps);
+    import('./supabaseBridge').then(({ SupabaseBridge }) => {
+      SupabaseBridge.upsertFollowUp(followUps[index]).catch(() => {});
+    });
     return followUps[index];
   }
 

@@ -41,10 +41,11 @@ export default function FollowUpsPage() {
 
   useEffect(() => {
     dataService.init();
-    loadTasks();
-    const evts = dataService.getEvents();
-    setEvents(evts);
-    if (evts.length > 0) setSelectedEventId(evts[0].id);
+    void Promise.all([dataService.refreshFollowUps(), dataService.refreshEvents()]).then(([followUps, evts]) => {
+      setFollowUps(followUps);
+      setEvents(evts);
+      if (evts.length > 0) setSelectedEventId(evts[0].id);
+    });
   }, []);
 
   const loadTasks = () => {

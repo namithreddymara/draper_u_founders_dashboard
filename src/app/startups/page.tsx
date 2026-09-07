@@ -26,7 +26,7 @@ export default function StartupsDirectoryPage() {
 
   useEffect(() => {
     dataService.init();
-    setFounders(dataService.getFounders());
+    void dataService.refreshFounders().then(setFounders);
   }, []);
 
   const sectors = ['all', 'AI / ML', 'SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'ClimateTech'];

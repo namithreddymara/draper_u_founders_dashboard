@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Founder, DraperUEvent, EventRegistration, FollowUp } from '@/types';
+import { Founder, DraperUEvent, EventRegistration, Interaction, FollowUp } from '@/types';
 
 export class SupabaseBridge {
   public static isReady(): boolean {
@@ -258,5 +258,82 @@ export class SupabaseBridge {
       console.warn('Supabase fetchEventRegistrations error, using local data', e);
       return null;
     }
+  }
+
+  public static async fetchInteractions(): Promise<Interaction[] | null> {
+    if (!supabase) return null;
+    const { data, error } = await supabase.from('interactions').select('*').order('date', { ascending: false });
+    if (error || !data) return null;
+    return data.map((row: any) => ({
+      id: row.id,
+      founderId: row.founder_id,
+      type: row.type,
+      title: row.title,
+      description: row.description || '',
+      date: row.date,
+      createdBy: row.created_by,
+      metadata: row.metadata || undefined,
+    }));
+  }
+
+  public static async upsertInteraction(interaction: Interaction): Promise<boolean> {
+    if (!supabase) return false;
+    const { error } = await supabase.from('interactions').upsert({
+      id: interaction.id,
+      founder_id: interaction.founderId,
+      type: interaction.type,
+      title: interaction.title,
+      description: interaction.description,
+      date: interaction.date,
+      created_by: interaction.createdBy,
+      metadata: interaction.metadata || {},
+    });
+    return !error;
+  }
+
+  public static async fetchFollowUps(): Promise<FollowUp[] | null> {
+    if (!supabase) return null;
+    const [{ data, error }, { data: founders }, { data: events }] = await Promise.all([
+      supabase.from('follow_ups').select('*').order('due_date', { ascending: true }),
+      supabase.from('founders').select('id, name, email, phone, startup_name'),
+      supabase.from('events').select('id, title'),
+    ]);
+    if (error || !data) return null;
+    return data.map((row: any) => ({
+      id: row.id,
+      founderId: row.founder_id,
+      founderName: founders?.find((founder: any) => founder.id === row.founder_id)?.name || row.founder_id,
+      founderCompany: founders?.find((founder: any) => founder.id === row.founder_id)?.startup_name || '',
+      founderEmail: founders?.find((founder: any) => founder.id === row.founder_id)?.email || '',
+      founderPhone: founders?.find((founder: any) => founder.id === row.founder_id)?.phone || '',
+      title: row.title,
+      description: row.description || '',
+      dueDate: row.due_date,
+      assignedTo: row.assigned_to,
+      status: row.status,
+      priority: row.priority,
+      eventId: row.event_id || undefined,
+      eventTitle: events?.find((event: any) => event.id === row.event_id)?.title || undefined,
+      completedAt: row.completed_at || undefined,
+      createdAt: row.created_at,
+    }));
+  }
+
+  public static async upsertFollowUp(followUp: FollowUp): Promise<boolean> {
+    if (!supabase) return false;
+    const { error } = await supabase.from('follow_ups').upsert({
+      id: followUp.id,
+      founder_id: followUp.founderId,
+      title: followUp.title,
+      description: followUp.description,
+      due_date: followUp.dueDate,
+      assigned_to: followUp.assignedTo,
+      status: followUp.status,
+      priority: followUp.priority,
+      event_id: followUp.eventId || null,
+      completed_at: followUp.completedAt || null,
+      created_at: followUp.createdAt,
+    });
+    return !error;
   }
 }

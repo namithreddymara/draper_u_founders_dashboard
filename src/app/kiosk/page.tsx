@@ -32,7 +32,7 @@ export default function EntranceLiveKiosk() {
 
   useEffect(() => {
     dataService.init();
-    refreshData();
+    void Promise.all([dataService.refreshEvents(), dataService.refreshRegistrations()]).then(refreshData);
 
     // Subscribe to real-time mobile submissions
     const unsubscribe = subscribeToDataUpdates(() => {

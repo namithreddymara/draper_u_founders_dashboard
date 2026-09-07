@@ -78,7 +78,7 @@ export default function FounderProfilePage() {
 
   useEffect(() => {
     dataService.init();
-    loadFounderData();
+    void dataService.refreshFounders().then(loadFounderData);
   }, [id]);
 
   const loadFounderData = () => {

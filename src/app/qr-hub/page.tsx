@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import {
   Printer,
@@ -14,15 +15,17 @@ import { Modal } from '@/components/ui/Modal';
 
 export default function QRRegistrationHubPage() {
   const [founders] = useState<Founder[]>([]);
-  const [events] = useState<DraperUEvent[]>(() => {
-    dataService.init();
-    return dataService.getEvents();
-  });
+  const [events, setEvents] = useState<DraperUEvent[]>([]);
   const [activeTab] = useState<'event_posters' | 'founder_fast_reg' | 'custom_builder'>('event_posters');
   const [selectedPosterEvent, setSelectedPosterEvent] = useState<DraperUEvent | null>(null);
   const [customEventId, setCustomEventId] = useState('');
   const [customTag, setCustomTag] = useState('');
   const [customFounderId, setCustomFounderId] = useState('');
+
+  useEffect(() => {
+    dataService.init();
+    void dataService.refreshEvents().then(setEvents);
+  }, []);
 
   const handlePrintAll = () => {
     window.print();

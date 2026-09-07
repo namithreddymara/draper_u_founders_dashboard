@@ -120,8 +120,13 @@ export default function ExecutiveDashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  const refreshData = () => {
+  const refreshData = async () => {
     dataService.init();
+    await Promise.all([
+      dataService.refreshFounders(),
+      dataService.refreshEvents(),
+      dataService.refreshRegistrations(),
+    ]);
     setMetrics(dataService.getExecutiveMetrics());
     const founders = dataService.getFounders();
     const registrations = dataService.getRegistrations();
@@ -131,9 +136,9 @@ export default function ExecutiveDashboard() {
   };
 
   useEffect(() => {
-    refreshData();
+    void refreshData();
     const unsubscribe = dataService.subscribeToDataUpdates(() => {
-      refreshData();
+      void refreshData();
     });
     return () => unsubscribe();
   }, []);

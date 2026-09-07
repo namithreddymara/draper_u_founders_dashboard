@@ -86,28 +86,39 @@ function FoundersCRMContent() {
   });
 
   const handleExportCSV = () => {
-    const headers = ['Founder ID', 'Name', 'Email', 'Phone', 'Startup', 'Sector', 'Stage', 'Funding', 'Location', 'Relationship'];
+    const headers = [
+      'Founder ID', 'Name', 'Email', 'Phone', 'WhatsApp', 'LinkedIn', 'Twitter', 'Location',
+      'Designation', 'Avatar URL', 'Bio', 'Startup Name', 'Startup Website', 'Startup Sector',
+      'Startup Sub-Sector', 'Startup Founded Year', 'Startup Stage', 'Startup Team Size',
+      'Startup Business Model', 'Startup Problem', 'Startup Solution', 'Startup Pitch Deck URL',
+      'Funding Type', 'Funding Stage', 'Amount Raised', 'Currency', 'Investors',
+      'Currently Fundraising', 'Target Amount', 'Last Round Date', 'Relationship',
+      'High Priority', 'Tags', 'Notes Count', 'Created At', 'Updated At',
+    ];
+    const csvValue = (value: unknown) => {
+      const text = Array.isArray(value) ? value.join('; ') : String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
     const rows = filteredFounders.map((f) => [
-      f.id,
-      `"${f.name}"`,
-      f.email,
-      f.phone,
-      `"${f.startup.name}"`,
-      `"${f.startup.sector}"`,
-      f.startup.stage,
-      f.funding.stage,
-      `"${f.location}"`,
-      `"${f.relationship}"`,
-    ]);
+      f.id, f.name, f.email, f.phone, f.whatsapp, f.linkedin, f.twitter, f.location,
+      f.designation, f.avatarUrl, f.bio, f.startup.name, f.startup.website, f.startup.sector,
+      f.startup.subSector, f.startup.foundedYear, f.startup.stage, f.startup.teamSize,
+      f.startup.businessModel, f.startup.problem, f.startup.solution, f.startup.pitchDeckUrl,
+      f.funding.type, f.funding.stage, f.funding.amountRaised, f.funding.currency,
+      f.funding.investors, f.funding.currentlyFundraising, f.funding.targetAmount,
+      f.funding.lastRoundDate, f.relationship, f.isHighPriority, f.tags, f.notesCount,
+      f.createdAt, f.updatedAt,
+    ].map(csvValue));
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.map(csvValue).join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+    const encodedUri = URL.createObjectURL(new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     link.setAttribute('download', `draperu-founders-export-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(encodedUri);
   };
 
   return (

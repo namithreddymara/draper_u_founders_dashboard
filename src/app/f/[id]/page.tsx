@@ -40,17 +40,21 @@ export default function PublicFounderProfilePass() {
 
   useEffect(() => {
     dataService.init();
-    const found = dataService.getFounderById(id);
-    if (found) {
+    void Promise.all([
+      dataService.refreshFounders(),
+      dataService.refreshEvents(),
+      dataService.refreshRegistrations(),
+    ]).then(([founders, allEvents]) => {
+      const found = founders.find((candidate) => candidate.id === id);
+      if (!found) return;
       setFounder(found);
-      const allEvents = dataService.getEvents();
       setEvents(allEvents);
       if (allEvents.length > 0) {
         const liveEvt = allEvents.find((e) => e.status === 'live') || allEvents[0];
         setSelectedEventId(liveEvt.id);
         checkRegistrationStatus(found.id, liveEvt.id);
       }
-    }
+    });
   }, [id]);
 
   const checkRegistrationStatus = (founderId: string, eventId: string) => {

@@ -16,7 +16,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
-import { Founder, DuplicateDetectionResult } from '@/types';
+import { Founder, DuplicateDetectionResult, BusinessModel, FundingStage, StartupStage, DraperURelationship } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 
 const SAMPLE_SHEET_DATA = `Name,Email,Phone,Company,Sector,Designation,City,LinkedIn
@@ -26,6 +26,64 @@ const SAMPLE_SHEET_DATA = `Name,Email,Phone,Company,Sector,Designation,City,Link
 "Sameer Sen","sameer@voltenergy.tech","+91 98111 22334","VoltEnergy Systems","ClimateTech","Founder & CTO","Pune","https://linkedin.com/in/sameersen"
 "Rohan Das","rohan@finbridge.money","+91 99444 55667","FinBridge Global","FinTech","Co-Founder","Mumbai","https://linkedin.com/in/rohandas-fin"`;
 
+const IMPORT_FIELDS = [
+  { field: 'id', label: 'Founder ID', aliases: ['Founder ID', 'ID'] },
+  { field: 'name', label: 'Founder Full Name', req: true, aliases: ['Name', 'Founder Name'] },
+  { field: 'email', label: 'Email Address', req: true, aliases: ['Email', 'Email Address'] },
+  { field: 'phone', label: 'Phone Number', req: true, aliases: ['Phone', 'Phone Number'] },
+  { field: 'whatsapp', label: 'WhatsApp', aliases: ['WhatsApp'] },
+  { field: 'linkedin', label: 'LinkedIn Profile', aliases: ['LinkedIn', 'LinkedIn Profile'] },
+  { field: 'twitter', label: 'Twitter', aliases: ['Twitter'] },
+  { field: 'location', label: 'Location', aliases: ['Location', 'City'] },
+  { field: 'designation', label: 'Designation', aliases: ['Designation'] },
+  { field: 'avatarUrl', label: 'Avatar URL', aliases: ['Avatar URL'] },
+  { field: 'bio', label: 'Bio', aliases: ['Bio'] },
+  { field: 'startupName', label: 'Startup Name', req: true, aliases: ['Startup Name', 'Company', 'Startup / Company Name'] },
+  { field: 'startupWebsite', label: 'Startup Website', aliases: ['Startup Website'] },
+  { field: 'startupSector', label: 'Startup Sector', aliases: ['Startup Sector', 'Sector', 'Sector / Domain'] },
+  { field: 'startupSubSector', label: 'Startup Sub-Sector', aliases: ['Startup Sub-Sector'] },
+  { field: 'startupFoundedYear', label: 'Startup Founded Year', aliases: ['Startup Founded Year'] },
+  { field: 'startupStage', label: 'Startup Stage', aliases: ['Startup Stage', 'Stage'] },
+  { field: 'startupTeamSize', label: 'Startup Team Size', aliases: ['Startup Team Size'] },
+  { field: 'startupBusinessModel', label: 'Startup Business Model', aliases: ['Startup Business Model'] },
+  { field: 'startupProblem', label: 'Startup Problem', aliases: ['Startup Problem'] },
+  { field: 'startupSolution', label: 'Startup Solution', aliases: ['Startup Solution'] },
+  { field: 'startupPitchDeckUrl', label: 'Startup Pitch Deck URL', aliases: ['Startup Pitch Deck URL'] },
+  { field: 'fundingType', label: 'Funding Type', aliases: ['Funding Type'] },
+  { field: 'fundingStage', label: 'Funding Stage', aliases: ['Funding Stage', 'Funding'] },
+  { field: 'amountRaised', label: 'Amount Raised', aliases: ['Amount Raised'] },
+  { field: 'currency', label: 'Currency', aliases: ['Currency'] },
+  { field: 'investors', label: 'Investors', aliases: ['Investors'] },
+  { field: 'currentlyFundraising', label: 'Currently Fundraising', aliases: ['Currently Fundraising'] },
+  { field: 'targetAmount', label: 'Target Amount', aliases: ['Target Amount'] },
+  { field: 'lastRoundDate', label: 'Last Round Date', aliases: ['Last Round Date'] },
+  { field: 'relationship', label: 'Relationship', aliases: ['Relationship'] },
+  { field: 'isHighPriority', label: 'High Priority', aliases: ['High Priority'] },
+  { field: 'tags', label: 'Tags', aliases: ['Tags'] },
+  { field: 'notesCount', label: 'Notes Count', aliases: ['Notes Count'] },
+  { field: 'createdAt', label: 'Created At', aliases: ['Created At'] },
+  { field: 'updatedAt', label: 'Updated At', aliases: ['Updated At'] },
+] as const;
+
+function parseCsv(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let value = '';
+  let quoted = false;
+  for (let index = 0; index < csv.length; index += 1) {
+    const char = csv[index];
+    if (char === '"' && quoted && csv[index + 1] === '"') { value += '"'; index += 1; }
+    else if (char === '"') quoted = !quoted;
+    else if (char === ',' && !quoted) { row.push(value.trim()); value = ''; }
+    else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && csv[index + 1] === '\n') index += 1;
+      row.push(value.trim()); rows.push(row); row = []; value = '';
+    } else value += char;
+  }
+  if (value || row.length) { row.push(value.trim()); rows.push(row); }
+  return rows;
+}
+
 export default function GoogleSheetImportPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [rawCsv, setRawCsv] = useState(SAMPLE_SHEET_DATA);
@@ -34,14 +92,8 @@ export default function GoogleSheetImportPage() {
   
   // Mapping state
   const [mapping, setMapping] = useState<Record<string, string>>({
-    name: 'Name',
-    email: 'Email',
-    phone: 'Phone',
-    company: 'Company',
-    sector: 'Sector',
-    designation: 'Designation',
-    city: 'City',
-    linkedin: 'LinkedIn',
+    name: 'Name', email: 'Email', phone: 'Phone', startupName: 'Company',
+    startupSector: 'Sector', designation: 'Designation', location: 'City', linkedin: 'LinkedIn',
   });
 
   const [scanResults, setScanResults] = useState<{
@@ -63,38 +115,18 @@ export default function GoogleSheetImportPage() {
   const handleParseCSV = () => {
     if (!rawCsv.trim()) return;
 
-    const lines = rawCsv.trim().split('\n');
-    if (lines.length < 2) {
+    const csvRows = parseCsv(rawCsv.trim());
+    if (csvRows.length < 2) {
       alert('Please enter at least 1 header row and 1 data row.');
       return;
     }
 
-    // Parse simple CSV line with quotes
-    const parseLine = (line: string) => {
-      const result = [];
-      let cur = '';
-      let insideQuote = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (c === '"') {
-          insideQuote = !insideQuote;
-        } else if (c === ',' && !insideQuote) {
-          result.push(cur.trim());
-          cur = '';
-        } else {
-          cur += c;
-        }
-      }
-      result.push(cur.trim());
-      return result;
-    };
-
-    const hdrs = parseLine(lines[0]);
+    const hdrs = csvRows[0];
     setHeaders(hdrs);
 
     const rows: Record<string, string>[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseLine(lines[i]);
+    for (let i = 1; i < csvRows.length; i++) {
+      const values = csvRows[i];
       const rowObj: Record<string, string> = {};
       hdrs.forEach((h, idx) => {
         rowObj[h] = values[idx] || '';
@@ -102,6 +134,11 @@ export default function GoogleSheetImportPage() {
       rows.push(rowObj);
     }
 
+    const detectedMapping: Record<string, string> = {};
+    IMPORT_FIELDS.forEach((definition) => {
+      detectedMapping[definition.field] = hdrs.find((header) => definition.aliases.includes(header as never)) || '';
+    });
+    setMapping((current) => ({ ...current, ...detectedMapping }));
     setParsedRows(rows);
     setStep(2);
   };
@@ -112,7 +149,7 @@ export default function GoogleSheetImportPage() {
       const phone = row[mapping.phone];
       const linkedin = row[mapping.linkedin];
       const name = row[mapping.name];
-      const company = row[mapping.company];
+      const company = row[mapping.startupName];
 
       const dupCheck = dataService.checkDuplicates({
         email,
@@ -139,39 +176,59 @@ export default function GoogleSheetImportPage() {
 
     scanResults.forEach((item) => {
       if (item.action === 'create_new') {
-        const name = item.row[mapping.name] || 'Anonymous';
+        const value = (field: string) => item.row[mapping[field]]?.trim() || '';
+        const name = value('name') || 'Anonymous';
         const email = item.row[mapping.email] || `founder-${Date.now()}@draperu.in`;
         const phone = item.row[mapping.phone] || '+91 90000 00000';
-        const company = item.row[mapping.company] || 'Stealth Startup';
-        const sector = item.row[mapping.sector] || 'Tech';
+        const company = value('startupName') || 'Stealth Startup';
+        const sector = value('startupSector') || 'Tech';
         const designation = item.row[mapping.designation] || 'Founder';
-        const city = item.row[mapping.city] || 'Bengaluru';
-        const linkedin = item.row[mapping.linkedin] || undefined;
-
-        dataService.createFounder({
+        const location = value('location') || 'Bengaluru, India';
+        const parseBoolean = (field: string) => ['true', 'yes', '1'].includes(value(field).toLowerCase());
+        const parseList = (field: string) => value(field).split(';').map((entry) => entry.trim()).filter(Boolean);
+        const founder: Founder = {
+          id: value('id') || dataService.generateFounderId(),
           name,
           email,
           phone,
-          linkedin,
-          location: `${city}, India`,
-          designation,
+          whatsapp: value('whatsapp') || undefined,
+          linkedin: value('linkedin') || undefined,
+          twitter: value('twitter') || undefined,
+          location,
+          designation: designation || 'Founder',
+          avatarUrl: value('avatarUrl') || undefined,
+          bio: value('bio') || undefined,
           startup: {
             name: company,
+            website: value('startupWebsite') || undefined,
             sector,
-            stage: 'Early Traction',
-            teamSize: '1-5',
-            businessModel: 'B2B',
+            subSector: value('startupSubSector') || undefined,
+            foundedYear: Number(value('startupFoundedYear')) || undefined,
+            stage: (value('startupStage') || 'Early Traction') as StartupStage,
+            teamSize: value('startupTeamSize') || '1-5',
+            businessModel: (value('startupBusinessModel') || 'B2B') as BusinessModel,
+            problem: value('startupProblem') || undefined,
+            solution: value('startupSolution') || undefined,
+            pitchDeckUrl: value('startupPitchDeckUrl') || undefined,
           },
           funding: {
-            type: 'Funded',
-            stage: 'Pre-Seed',
-            investors: [],
-            currentlyFundraising: true,
+            type: (value('fundingType') || 'Funded') as 'Bootstrapped' | 'Funded',
+            stage: (value('fundingStage') || 'Pre-Seed') as FundingStage,
+            amountRaised: value('amountRaised') || undefined,
+            currency: (value('currency') || undefined) as 'USD' | 'INR' | undefined,
+            investors: parseList('investors'),
+            currentlyFundraising: parseBoolean('currentlyFundraising'),
+            targetAmount: value('targetAmount') || undefined,
+            lastRoundDate: value('lastRoundDate') || undefined,
           },
-          relationship: 'Event attendee',
-          isHighPriority: false,
-          tags: ['Google Sheet Ingest', sector],
-        });
+          relationship: (value('relationship') || 'Event attendee') as DraperURelationship,
+          isHighPriority: parseBoolean('isHighPriority'),
+          tags: parseList('tags').length ? parseList('tags') : ['Google Sheet Ingest', sector],
+          notesCount: Number(value('notesCount')) || 0,
+          createdAt: value('createdAt') || new Date().toISOString(),
+          updatedAt: value('updatedAt') || new Date().toISOString(),
+        };
+        dataService.importFounder(founder);
         createdCount++;
       } else {
         skippedCount++;
@@ -278,19 +335,10 @@ export default function GoogleSheetImportPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { field: 'name', label: 'Founder Full Name', req: true },
-              { field: 'email', label: 'Email Address', req: true },
-              { field: 'phone', label: 'Phone Number', req: true },
-              { field: 'company', label: 'Startup / Company Name', req: true },
-              { field: 'sector', label: 'Sector / Domain' },
-              { field: 'designation', label: 'Designation' },
-              { field: 'city', label: 'City' },
-              { field: 'linkedin', label: 'LinkedIn Profile' },
-            ].map((f) => (
+            {IMPORT_FIELDS.map((f) => (
               <div key={f.field} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">{f.label} {f.req && <span className="text-blue-600">*</span>}</span>
+                    <span className="text-xs font-bold text-slate-800 block">{f.label} {'req' in f && f.req && <span className="text-blue-600">*</span>}</span>
                   <span className="text-[10px] text-slate-500">CRM Field: {f.field}</span>
                 </div>
                 <select
@@ -353,7 +401,7 @@ export default function GoogleSheetImportPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900 text-xs">{item.row[mapping.name]}</span>
-                    <span className="text-xs text-slate-400">({item.row[mapping.company]})</span>
+                    <span className="text-xs text-slate-400">({item.row[mapping.startupName]})</span>
                     {item.dupResult.hasDuplicate ? (
                       <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
@@ -368,7 +416,7 @@ export default function GoogleSheetImportPage() {
                   <div className="text-[11px] text-slate-400 mt-1 flex gap-3">
                     <span>{item.row[mapping.email]}</span>
                     <span>{item.row[mapping.phone]}</span>
-                    <span>{item.row[mapping.sector]}</span>
+                    <span>{item.row[mapping.startupSector]}</span>
                   </div>
                 </div>
 

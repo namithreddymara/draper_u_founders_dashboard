@@ -21,9 +21,15 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     dataService.init();
-    setMetrics(dataService.getExecutiveMetrics());
-    setFounders(dataService.getFounders());
-    setRegistrations(dataService.getRegistrations());
+    void Promise.all([
+      dataService.refreshFounders(),
+      dataService.refreshEvents(),
+      dataService.refreshRegistrations(),
+    ]).then(([remoteFounders, , remoteRegistrations]) => {
+      setMetrics(dataService.getExecutiveMetrics());
+      setFounders(remoteFounders);
+      setRegistrations(remoteRegistrations);
+    });
   }, []);
 
   if (!metrics) return null;

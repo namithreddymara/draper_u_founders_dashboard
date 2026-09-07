@@ -32,7 +32,7 @@ function AISearchContent() {
 
   useEffect(() => {
     dataService.init();
-    executeSearch(initialQuery);
+    void dataService.refreshFounders().then(() => executeSearch(initialQuery));
   }, [initialQuery]);
 
   const executeSearch = (q: string) => {
