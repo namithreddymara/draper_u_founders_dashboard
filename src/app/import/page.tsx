@@ -86,7 +86,8 @@ function parseCsv(csv: string): string[][] {
 
 export default function GoogleSheetImportPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [rawCsv, setRawCsv] = useState(SAMPLE_SHEET_DATA);
+  const [rawCsv, setRawCsv] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
   const [parsedRows, setParsedRows] = useState<Record<string, string>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   
@@ -112,8 +113,23 @@ export default function GoogleSheetImportPage() {
     dataService.init();
   }, []);
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert('Please select a CSV file.');
+      event.target.value = '';
+      return;
+    }
+    setSelectedFileName(file.name);
+    setRawCsv(await file.text());
+  };
+
   const handleParseCSV = () => {
-    if (!rawCsv.trim()) return;
+    if (!rawCsv.trim()) {
+      alert('Please select a CSV file or paste CSV data before continuing.');
+      return;
+    }
 
     const csvRows = parseCsv(rawCsv.trim());
     if (csvRows.length < 2) {
@@ -121,7 +137,7 @@ export default function GoogleSheetImportPage() {
       return;
     }
 
-    const hdrs = csvRows[0];
+    const hdrs = csvRows[0].map((header, index) => index === 0 ? header.replace(/^\uFEFF/, '') : header);
     setHeaders(hdrs);
 
     const rows: Record<string, string>[] = [];
@@ -302,8 +318,14 @@ export default function GoogleSheetImportPage() {
           </div>
 
           <p className="text-xs text-slate-500">
-            Paste rows copied directly from Google Sheets or export your CSV.
+            Select a CSV file exported from the Founder CRM, or paste rows copied directly from Google Sheets.
           </p>
+
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/60 px-4 py-5 text-xs font-bold text-blue-700 hover:bg-blue-50">
+            <Upload className="h-4 w-4" />
+            <span>{selectedFileName || 'Select CSV file'}</span>
+            <input type="file" accept=".csv,text/csv" onChange={handleFileSelect} className="sr-only" />
+          </label>
 
           <textarea
             rows={10}

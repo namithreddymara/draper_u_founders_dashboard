@@ -99,7 +99,7 @@ function FoundersCRMContent() {
       const text = Array.isArray(value) ? value.join('; ') : String(value ?? '');
       return `"${text.replace(/"/g, '""')}"`;
     };
-    const rows = filteredFounders.map((f) => [
+    const rows = founders.map((f) => [
       f.id, f.name, f.email, f.phone, f.whatsapp, f.linkedin, f.twitter, f.location,
       f.designation, f.avatarUrl, f.bio, f.startup.name, f.startup.website, f.startup.sector,
       f.startup.subSector, f.startup.foundedYear, f.startup.stage, f.startup.teamSize,
@@ -149,7 +149,7 @@ function FoundersCRMContent() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>Export All CSV</span>
           </button>
 
           <button
