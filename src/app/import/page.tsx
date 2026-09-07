@@ -84,6 +84,10 @@ function parseCsv(csv: string): string[][] {
   return rows;
 }
 
+function normalizeHeader(value: string): string {
+  return value.replace(/^\uFEFF/, '').trim().toLowerCase().replace(/[\s_-]+/g, ' ');
+}
+
 export default function GoogleSheetImportPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [rawCsv, setRawCsv] = useState('');
@@ -137,7 +141,7 @@ export default function GoogleSheetImportPage() {
       return;
     }
 
-    const hdrs = csvRows[0].map((header, index) => index === 0 ? header.replace(/^\uFEFF/, '') : header);
+    const hdrs = csvRows[0].map((header, index) => index === 0 ? header.replace(/^\uFEFF/, '').trim() : header.trim());
     setHeaders(hdrs);
 
     const rows: Record<string, string>[] = [];
@@ -152,7 +156,7 @@ export default function GoogleSheetImportPage() {
 
     const detectedMapping: Record<string, string> = {};
     IMPORT_FIELDS.forEach((definition) => {
-      detectedMapping[definition.field] = hdrs.find((header) => definition.aliases.includes(header as never)) || '';
+      detectedMapping[definition.field] = hdrs.find((header) => definition.aliases.some((alias) => normalizeHeader(alias) === normalizeHeader(header))) || '';
     });
     setMapping((current) => ({ ...current, ...detectedMapping }));
     setParsedRows(rows);
@@ -178,7 +182,7 @@ export default function GoogleSheetImportPage() {
       return {
         row,
         dupResult: dupCheck,
-        action: (dupCheck.hasDuplicate ? 'skip_existing' : 'create_new') as 'create_new' | 'skip_existing' | 'update_existing',
+        action: (dupCheck.hasDuplicate ? 'update_existing' : 'create_new') as 'create_new' | 'skip_existing' | 'update_existing',
       };
     });
 
@@ -191,7 +195,7 @@ export default function GoogleSheetImportPage() {
     let skippedCount = 0;
 
     scanResults.forEach((item) => {
-      if (item.action === 'create_new') {
+      if (item.action === 'create_new' || item.action === 'update_existing') {
         const value = (field: string) => item.row[mapping[field]]?.trim() || '';
         const name = value('name') || 'Anonymous';
         const email = item.row[mapping.email] || `founder-${Date.now()}@draperu.in`;
@@ -203,7 +207,9 @@ export default function GoogleSheetImportPage() {
         const parseBoolean = (field: string) => ['true', 'yes', '1'].includes(value(field).toLowerCase());
         const parseList = (field: string) => value(field).split(';').map((entry) => entry.trim()).filter(Boolean);
         const founder: Founder = {
-          id: value('id') || dataService.generateFounderId(),
+          id: item.action === 'update_existing'
+            ? item.dupResult.matchedFounder?.id || value('id') || dataService.generateFounderId()
+            : value('id') || dataService.generateFounderId(),
           name,
           email,
           phone,
@@ -245,7 +251,11 @@ export default function GoogleSheetImportPage() {
           updatedAt: value('updatedAt') || new Date().toISOString(),
         };
         dataService.importFounder(founder);
-        createdCount++;
+        if (item.action === 'update_existing') {
+          skippedCount++;
+        } else {
+          createdCount++;
+        }
       } else {
         skippedCount++;
       }
@@ -453,6 +463,7 @@ export default function GoogleSheetImportPage() {
                     className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none"
                   >
                     <option value="create_new">Create New DRU-F-ID</option>
+                    <option value="update_existing">Update Existing Profile</option>
                     <option value="skip_existing">Skip (Keep Existing)</option>
                   </select>
                 </div>
