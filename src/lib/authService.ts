@@ -30,10 +30,13 @@ class AuthService {
     try {
       if (user) {
         localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(user));
-        // Also sync role with dataService
+        // Keep the role consistent across both legacy and current storage keys.
         localStorage.setItem('dru_current_role_v1', JSON.stringify(user.role));
+        localStorage.setItem('dru_current_role_v2', JSON.stringify(user.role));
       } else {
         localStorage.removeItem(STORAGE_KEY_AUTH);
+        localStorage.removeItem('dru_current_role_v1');
+        localStorage.removeItem('dru_current_role_v2');
       }
       window.dispatchEvent(new CustomEvent('dru_auth_changed', { detail: { user } }));
     } catch (e) {
@@ -84,6 +87,14 @@ class AuthService {
   }
 
   public async getCurrentUserFromSession(): Promise<AuthUser | null> {
+    if (typeof window !== 'undefined') {
+      const hasLoggedOut = localStorage.getItem('dru_has_logged_out') === 'true';
+      const localUser = hasLoggedOut ? null : this.getCurrentUser();
+      if (localUser) {
+        return localUser;
+      }
+    }
+
     if (!supabase) return null;
     const { data } = await supabase.auth.getSession();
     if (!data.session?.user) return null;

@@ -37,17 +37,24 @@ function EventsManagementContent() {
   const [selectedQRPosterEvent, setSelectedQRPosterEvent] = useState<DraperUEvent | null>(null);
 
   // New Event Form
-  const [newEventForm, setNewEventForm] = useState({
-    title: '',
-    slug: '',
-    tagline: '',
-    description: '',
-    date: '2026-09-04T18:00',
-    venue: 'Draper Startup House, Koramangala',
-    city: 'Bengaluru',
-    category: 'Founder Mafia Night' as DraperUEvent['category'],
-    status: 'upcoming' as DraperUEvent['status'],
-    capacity: 150,
+  const [newEventForm, setNewEventForm] = useState(() => {
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+
+    return {
+      title: '',
+      slug: '',
+      tagline: '',
+      description: '',
+      date: localDateTime,
+      venue: 'Draper Startup House, Koramangala',
+      city: 'Bengaluru',
+      category: 'Founder Mafia Night' as DraperUEvent['category'],
+      status: 'upcoming' as DraperUEvent['status'],
+      capacity: 150,
+    };
   });
 
   useEffect(() => {
@@ -390,6 +397,34 @@ function EventsManagementContent() {
                 required
                 value={newEventForm.city}
                 onChange={(e) => setNewEventForm({ ...newEventForm, city: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                Event Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                required
+                value={newEventForm.date}
+                onChange={(e) => setNewEventForm({ ...newEventForm, date: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                Capacity
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={newEventForm.capacity}
+                onChange={(e) => setNewEventForm({ ...newEventForm, capacity: Number(e.target.value) || 1 })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
               />
             </div>

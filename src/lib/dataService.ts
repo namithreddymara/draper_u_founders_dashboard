@@ -17,6 +17,36 @@ const STORAGE_KEYS = {
   CURRENT_ROLE: 'dru_current_role_v2',
 };
 
+function getStoredCurrentRole(): UserRole {
+  if (typeof window === 'undefined') return 'admin';
+
+  const legacy = localStorage.getItem('dru_current_role_v1');
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(legacy) as UserRole;
+      if (parsed === 'admin' || parsed === 'community_team' || parsed === 'event_team' || parsed === 'viewer') {
+        return parsed;
+      }
+    } catch {
+      // Ignore malformed stored values and fall through.
+    }
+  }
+
+  const current = localStorage.getItem(STORAGE_KEYS.CURRENT_ROLE);
+  if (current) {
+    try {
+      const parsed = JSON.parse(current) as UserRole;
+      if (parsed === 'admin' || parsed === 'community_team' || parsed === 'event_team' || parsed === 'viewer') {
+        return parsed;
+      }
+    } catch {
+      // Ignore malformed stored values.
+    }
+  }
+
+  return 'admin';
+}
+
 // Safe LocalStorage helpers
 function getItem<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') return defaultValue;
@@ -94,7 +124,7 @@ class DataService {
 
   // --- Role Management ---
   public getCurrentRole(): UserRole {
-    return getItem<UserRole>(STORAGE_KEYS.CURRENT_ROLE, 'admin');
+    return getStoredCurrentRole();
   }
 
   public setCurrentRole(role: UserRole): void {
